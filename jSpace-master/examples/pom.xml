@@ -1,0 +1,36 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+	    <groupId>io.github.pspaces</groupId>
+	    <artifactId>jspace</artifactId>
+	    <version>1.0-SNAPSHOT</version>
+        <relativePath>..</relativePath>
+    </parent>
+
+    <packaging>pom</packaging>
+
+    <groupId>io.github.pspaces.jspace</groupId>
+    <artifactId>examples</artifactId>
+        
+    <name>Examples</name>
+    <description>A set of examples showing jSpace features.</description>
+
+	<dependencies>
+        <dependency>
+            <groupId>io.github.pspaces.jspace</groupId>
+            <artifactId>common</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+    </dependencies>    
+    
+    
+    <modules>
+        <module>PingPong</module>
+        <module>HelloWorld</module>
+	<module>DiningPhilosophers</module>
+	<module>ProducerConsumer</module>
+    </modules>
+
+</project>
