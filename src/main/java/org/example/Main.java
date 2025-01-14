@@ -3,6 +3,7 @@ package org.example;
 import java.io.IOException;
 import java.util.List;
 
+import org.example.Services.API;
 import org.jspace.*;
 
 
@@ -16,24 +17,35 @@ public class Main {
     public static void main(String[] argv) throws InterruptedException, IOException {
         SpaceRepository repository = new SpaceRepository();
         repository.addGate(GATE_URI);
-        repository.add("Names", new SequentialSpace());
-        repository.add("QNA", new SequentialSpace());
-        repository.add("GameState", new SequentialSpace());
+        String[] spaces = {"Names", "QNA", "GameState"};
+
+        for (String space : spaces) {
+            repository.add(space, new SequentialSpace());
+        }
+
         repository.put("Names", "Jakob");
         repository.put("Names", "Anton");
         repository.put("Names", "Lucas");
 
+        repository.put("GameState", GameState.ANSWERING);
+
         Space remoteSpace = new RemoteSpace(REMOTE_URI);
-        List<Object[]> temp = remoteSpace.queryAll(new FormalField(String.class));
+        Object[] temp = remoteSpace.queryp(new FormalField(String.class));
 
         repository.put("Names", "Lucas");
 
-
-
-        for (Object[] row : temp) {
-            System.out.println(row[0]);
+        for (Object row : temp) {
+            System.out.println(row);
         }
 
+        var api = new API();
+        var response = api.callUrbanDictionaryAPI();
+
+        for (var wordDefinition : response) {
+            System.out.println(wordDefinition);
+        }
+        repository.closeGates();
+        System.exit(0);
     }
 
 
