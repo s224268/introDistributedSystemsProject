@@ -1,6 +1,8 @@
 package org.example;
 
 import java.io.IOException;
+import java.util.List;
+
 import org.example.Services.API;
 import org.example.Services.Params;
 import org.jspace.*;
@@ -23,25 +25,23 @@ public class Main {
             repository.add(space, new SequentialSpace());
         }
 
-        repository.put("Names", "Jakob");
-        repository.put("Names", "Anton");
-        repository.put("Names", "Lucas");
+        Space nameSpace = repository.get("Names");
+        Space QnASpace = repository.get("QnA");
+        Space gameStateSpace = repository.get("GameState");
 
-        repository.put("GameState", GameState.ANSWERING);
 
-        Space nameSpace = new RemoteSpace(NAMES_URI);
-        Object[] temp = nameSpace.queryp(new FormalField(String.class));
+        nameSpace.put("Jakob");
+        nameSpace.put("Anton");
 
-        repository.put("Names", "Lucas");
+        List<Object[]> temp = nameSpace.queryAll(new FormalField(String.class));
+
 
         for (Object row : temp) {
-            System.out.println(row);
+            Object[] tuple = (Object[]) row;
+            System.out.println(tuple[0]);
         }
-        Space QnASpace = new RemoteSpace(QNA_URI);
-        QnASpace.put("Word: TEST", "Meaning: TEST");
+
         getNewQnA(QnASpace);
-
-
 
 
 
@@ -64,5 +64,15 @@ public class Main {
         for (var word : response) {
             space.put(word.getWord(), word.getMeaning());
         }
+
+
+        /* For testing purposes
+        // Print the contents of the space
+        List<Object[]> entries = space.queryAll(new FormalField(String.class), new FormalField(String.class));
+        for (Object entry : entries) {
+            Object[] tuple = (Object[]) entry;
+            System.out.println("Word: " + tuple[0] + ", Meaning: " + tuple[1]);
+        }
+        */
     }
 }
