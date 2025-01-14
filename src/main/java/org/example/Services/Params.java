@@ -1,5 +1,7 @@
 package org.example.Services;
 
+import java.util.StringJoiner;
+
 public class Params {
     private String strict;
     private String limit;
@@ -55,5 +57,16 @@ public class Params {
 
     public void setMultiPage(String multiPage) {
         this.multiPage = multiPage;
+    }
+
+    public String toQueryString() {
+        StringJoiner joiner = new StringJoiner("&");
+        if (strict != null) joiner.add("strict=" + strict);
+        if (limit != null) joiner.add("limit=" + limit);
+        if (matchCase != null) joiner.add("matchCase=" + matchCase);
+        if (scrapeType != null) joiner.add("scrapeType=" + scrapeType);
+        if (page != null) joiner.add("page=" + page);
+        if (multiPage != null) joiner.add("multiPage=" + multiPage);
+        return joiner.toString();
     }
 }

@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.util.List;
 
 import org.example.Services.API;
+import org.example.Services.Params;
 import org.jspace.*;
 
 
@@ -39,7 +40,9 @@ public class Main {
         }
 
         var api = new API();
-        var response = api.callUrbanDictionaryAPI();
+        Params params = new Params();
+        params.setLimit("5");
+        var response = api.callUrbanDictionaryAPI(params);
 
         for (var wordDefinition : response) {
             System.out.println(wordDefinition);

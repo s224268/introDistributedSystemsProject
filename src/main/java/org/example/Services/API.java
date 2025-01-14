@@ -10,12 +10,13 @@ import com.google.gson.Gson;
 
 public class API {
 
-    private static final String API_URL = "https://unofficialurbandictionaryapi.com/api/random?strict=false&matchCase=false&limit=3&page=1&multiPage=false&";
+    private static final String BASE_URL = "https://unofficialurbandictionaryapi.com/api/random?";
 
-    public List<WordDefinition> callUrbanDictionaryAPI() {
+    public List<WordDefinition> callUrbanDictionaryAPI(Params params) {
         HttpClient client = HttpClient.newHttpClient();
+        String url = BASE_URL + params.toQueryString();
         HttpRequest request = HttpRequest.newBuilder()
-                .uri(URI.create(API_URL))
+                .uri(URI.create(url))
                 .GET()
                 .build();
 
