@@ -1,7 +1,6 @@
 package org.example;
 
 import java.io.IOException;
-import java.util.List;
 
 import org.example.Services.API;
 import org.example.Services.Params;
@@ -39,7 +38,7 @@ public class Main {
             System.out.println(row);
         }
 
-        var api = new API();
+        var api = API.getInstance();
         Params params = new Params();
         params.setLimit("5");
         var response = api.callUrbanDictionaryAPI(params);
