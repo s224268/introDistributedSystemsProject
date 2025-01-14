@@ -1,27 +1,46 @@
 package org.example;
 
+import java.io.IOException;
+import java.rmi.Remote;
+import java.util.List;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 
-import org.jspace.FormalField;
-import org.jspace.SequentialSpace;
-import org.jspace.Space;
+import jdk.jshell.execution.RemoteExecutionControl;
+import org.jspace.*;
 
-/**
- * A simple HelloWorld program.
- *
- *
- * @author Michele Loreti
- *
- */
+import javax.management.ObjectName;
+
+
 public class Main {
 
-    public static void main(String[] argv) throws InterruptedException {
-        Space inbox = new SequentialSpace();
+    public final static String GATE_URI = "tcp://127.0.0.1:9001/?keep";
+    public final static String REMOTE_URI = "tcp://127.0.0.1:9001/Names?keep";
 
-        inbox.put("Hello World!");
-        Object[] tuple = inbox.get(new FormalField(String.class));
-        System.out.println(tuple[0]);
+
+
+    public static void main(String[] argv) throws InterruptedException, IOException {
+        SpaceRepository repository = new SpaceRepository();
+        repository.addGate(GATE_URI);
+        repository.add("Names", new SequentialSpace());
+        repository.add("QNA", new SequentialSpace());
+        repository.add("GameState", new SequentialSpace());
+        repository.put("Names", "Jakob");
+        repository.put("Names", "Anton");
+        repository.put("Names", "Lucas");
+
+        Space remoteSpace = new RemoteSpace(REMOTE_URI);
+        List<Object[]> temp = remoteSpace.queryAll(new FormalField(String.class));
+
+        repository.put("Names", "Lucas");
+
+
+
+        for (Object[] row : temp) {
+            System.out.println(row[0]);
+        }
 
     }
+
 
 }
