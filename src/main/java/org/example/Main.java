@@ -17,42 +17,61 @@ public class Main {
 
 
 
-    public static void main(String[] argv) throws InterruptedException, IOException {
+    public static void main(String[] argv) throws InterruptedException {
         SpaceRepository repository = new SpaceRepository();
         repository.addGate(GATE_URI);
-        String[] spaces = {"Names", "Question", "GameState", "CorrectAnswer"};
+        String[] spaces = {"Players", "Question", "GameState", "Answers",};
+        String correctAnswer = "";
 
         for (String space : spaces) {
             repository.add(space, new SequentialSpace());
         }
 
-        Space nameSpace = repository.get("Names");
+        Space playerSpace = repository.get("Players");
         Space questionSpace = repository.get("Question");
         Space gameStateSpace = repository.get("GameState");
-        Space correctAnswerSpace = repository.get("CorrectAnswer");
+        Space AnswerSpace = repository.get("Answers");
+        int countOfRounds = 0;
 
 
-        nameSpace.put("Jakob");
-        nameSpace.put("Anton");
+        while (true) {
+            countOfRounds++;
+            correctAnswer = getNewQnA(questionSpace);
+            gameStateSpace.put("answering");
 
-        List<Object[]> temp = nameSpace.queryAll(new FormalField(String.class));
+            // Here threading for waiting for answers
+
+            // Process answers and give points
+            updateScores();
 
 
-        for (Object row : temp) {
-            Object[] tuple = (Object[]) row;
-            System.out.println(tuple[0]);
+            gameStateSpace.getAll(new FormalField(String.class));
+            gameStateSpace.put("showing");
+
+            //Wait here for showing
+
+            if (countOfRounds == 10) {
+                gameStateSpace.getAll(new FormalField(String.class));
+                gameStateSpace.put("final");
+
+                //wait to show scoreboard here
+
+
+                countOfRounds = 0;
+
+            }
+
         }
+    }
 
-        getNewQnA(questionSpace, correctAnswerSpace);
+    private static void updateScores() {
 
-
-
-        repository.closeGates();
-        repository.shutDown();
     }
 
 
-    private static void getNewQnA(Space question, Space answer) throws InterruptedException {
+
+    private static String getNewQnA(Space question) throws InterruptedException {
+
         var api = API.getInstance();
         Params params = new Params();
         params.setLimit("3");
@@ -60,7 +79,7 @@ public class Main {
 
         if (response.size() < 3) {
             System.out.println("Not enough words retrieved from the API.");
-            return;
+            return "Not enough words retrieved from the API.";
         }
 
         question.getAll(new FormalField(Object.class), new FormalField(Object.class), new FormalField(Object.class), new FormalField(Object.class));
@@ -69,17 +88,6 @@ public class Main {
         String word2 = response.get(1).getWord();
         String word3 = response.get(2).getWord();
         question.put(meaning, word1, word2, word3);
-
-        answer.getAll(new FormalField(Object.class));
-        answer.put(word1);
-
-        /* For testing purposes
-        // Print the contents of the space
-        List<Object[]> entries = space.queryAll(new FormalField(String.class), new FormalField(String.class));
-        for (Object entry : entries) {
-            Object[] tuple = (Object[]) entry;
-            System.out.println("Word: " + tuple[0] + ", Meaning: " + tuple[1]);
-        }
-        */
+        return word1;
     }
 }
