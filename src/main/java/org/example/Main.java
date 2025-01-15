@@ -3,6 +3,7 @@ package org.example;
 import org.example.Services.API;
 import org.example.Services.Params;
 import org.example.Services.WordDefinition;
+import org.jspace.ActualField;
 import org.jspace.FormalField;
 import org.jspace.Space;
 
@@ -17,45 +18,66 @@ public class Main {
         Space playerSpace = r.getPlayerSpace();
         Space questionSpace = r.getQuestionSpace();
         Space gameStateSpace = r.getGameStateSpace();
-        Space AnswerSpace = r.getAnswerSpace();
+        Space answerSpace = r.getAnswerSpace();
+
+        AnswerGetter answerGetter = new AnswerGetter(answerSpace);
+        int waitTime = 30;
         int countOfRounds = 0;
 
 
         while (true) {
             countOfRounds++;
             String correctAnswer = getNewQnA(questionSpace);
-            gameStateSpace.put("answering");
+            gameStateSpace.put(GameState.ANSWERING);
+            long startTimestamp = System.currentTimeMillis();
 
             // Here threading for waiting for answers
 
-            // Process answers and give points
-            updateScore();
+            List<UserAnswerWithTimestamp> answersWrapper = answerGetter.getAnswers(waitTime, playerSpace.size()); // ANTON HERE
+            updateAllScores(answersWrapper, startTimestamp, correctAnswer, playerSpace, waitTime);
 
 
             gameStateSpace.getAll(new FormalField(String.class));
-            gameStateSpace.put("showing");
+            gameStateSpace.put(GameState.SHOWING);
 
-            //Wait here for showing
+            Thread.sleep(5000);
 
             if (countOfRounds == 10) {
                 gameStateSpace.getAll(new FormalField(String.class));
-                gameStateSpace.put("final");
-
-                //wait to show scoreboard here
-
-
+                gameStateSpace.put(GameState.FINAL);
+                Thread.sleep(5000);
                 countOfRounds = 0;
-
             }
-
         }
     }
 
-    private static void updateScore() {
 
+    private static void updateAllScores(List<UserAnswerWithTimestamp> answerWrapper, long startTimestamp, String correctAnswer, Space players, int waitTime) {
+        for (UserAnswerWithTimestamp answer : answerWrapper) {
+            int score = calculateScore(answer, startTimestamp, correctAnswer, waitTime);
+            try {
+                updateScore(players, answer.ID, score);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        }
     }
 
+    private static int calculateScore(UserAnswerWithTimestamp answerWrapper, long startTimestamp, String correctAnswer, int waitTime) {
+        long responseTime = answerWrapper.timeStamp - startTimestamp;
+        int points = 0;
 
+        if (answerWrapper.answer.equalsIgnoreCase(correctAnswer)) {
+            points = (int) Math.max(0, (100 - (responseTime / waitTime)) * 100);
+        }
+        return points;
+    }
+
+    private static void updateScore(Space players, String playerID, int score) throws InterruptedException {
+        Object[] tuple = players.get(new FormalField(String.class), new ActualField(playerID), new FormalField(Integer.class));
+        int newScore = (int) tuple[2] + score;
+        players.put(tuple[0], tuple[1], newScore);
+    }
 
     private static String getNewQnA(Space question) throws InterruptedException {
 
@@ -78,3 +100,4 @@ public class Main {
         return word1;
     }
 }
+
