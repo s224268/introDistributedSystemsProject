@@ -5,6 +5,7 @@ import java.util.List;
 
 import org.example.Services.API;
 import org.example.Services.Params;
+import org.example.Services.WordDefinition;
 import org.jspace.*;
 
 
@@ -19,15 +20,16 @@ public class Main {
     public static void main(String[] argv) throws InterruptedException, IOException {
         SpaceRepository repository = new SpaceRepository();
         repository.addGate(GATE_URI);
-        String[] spaces = {"Names", "QnA", "GameState"};
+        String[] spaces = {"Names", "Question", "GameState", "CorrectAnswer"};
 
         for (String space : spaces) {
             repository.add(space, new SequentialSpace());
         }
 
         Space nameSpace = repository.get("Names");
-        Space QnASpace = repository.get("QnA");
+        Space questionSpace = repository.get("Question");
         Space gameStateSpace = repository.get("GameState");
+        Space correctAnswerSpace = repository.get("CorrectAnswer");
 
 
         nameSpace.put("Jakob");
@@ -41,30 +43,30 @@ public class Main {
             System.out.println(tuple[0]);
         }
 
-        getNewQnA(QnASpace);
+        getNewQnA(questionSpace, correctAnswerSpace);
 
 
 
         repository.closeGates();
-        System.exit(0);
+        repository.shutDown();
     }
 
 
-
-
-    /*
-    Her skal vi vel have sådan at vi kun vælger en af ordene som det "rigtige" og sender "meaning" af det.
-     */
-    private static void getNewQnA(Space space) throws InterruptedException {
+    private static void getNewQnA(Space question, Space answer) throws InterruptedException {
         var api = API.getInstance();
         Params params = new Params();
         params.setLimit("3");
-        var response = api.callUrbanDictionaryAPI(params);
-        space.getAll(new FormalField(Object.class), new FormalField(Object.class));
-        for (var word : response) {
-            space.put(word.getWord(), word.getMeaning());
-        }
+        List<WordDefinition> response = api.callUrbanDictionaryAPI(params);
 
+        question.getAll(new FormalField(Object.class), new FormalField(Object.class), new FormalField(Object.class), new FormalField(Object.class));
+        String meaning = response.get(0).getMeaning();
+        String word1 = response.get(0).getWord();
+        String word2 = response.get(1).getWord();
+        String word3 = response.get(2).getWord();
+        question.put(meaning, word1, word2, word3);
+
+        answer.getAll(new FormalField(Object.class));
+        answer.put(word1);
 
         /* For testing purposes
         // Print the contents of the space
