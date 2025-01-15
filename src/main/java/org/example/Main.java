@@ -1,48 +1,35 @@
 package org.example;
 
-import java.io.IOException;
-import java.util.List;
-
 import org.example.Services.API;
 import org.example.Services.Params;
 import org.example.Services.WordDefinition;
-import org.jspace.*;
+import org.jspace.FormalField;
+import org.jspace.Space;
+
+import java.io.IOException;
+import java.util.List;
 
 
 public class Main {
 
-    public final static String GATE_URI = "tcp://127.0.0.1:9001/?keep";
-    public final static String NAMES_URI = "tcp://127.0.0.1:9001/Names?keep";
-    public final static String QNA_URI = "tcp://127.0.0.1:9001/QnA?keep";
-
-
-
-    public static void main(String[] argv) throws InterruptedException {
-        SpaceRepository repository = new SpaceRepository();
-        repository.addGate(GATE_URI);
-        String[] spaces = {"Players", "Question", "GameState", "Answers",};
-        String correctAnswer = "";
-
-        for (String space : spaces) {
-            repository.add(space, new SequentialSpace());
-        }
-
-        Space playerSpace = repository.get("Players");
-        Space questionSpace = repository.get("Question");
-        Space gameStateSpace = repository.get("GameState");
-        Space AnswerSpace = repository.get("Answers");
+    public static void main(String[] argv) throws InterruptedException, IOException {
+        Repository r = new Repository();
+        Space playerSpace = r.getPlayerSpace();
+        Space questionSpace = r.getQuestionSpace();
+        Space gameStateSpace = r.getGameStateSpace();
+        Space AnswerSpace = r.getAnswerSpace();
         int countOfRounds = 0;
 
 
         while (true) {
             countOfRounds++;
-            correctAnswer = getNewQnA(questionSpace);
+            String correctAnswer = getNewQnA(questionSpace);
             gameStateSpace.put("answering");
 
             // Here threading for waiting for answers
 
             // Process answers and give points
-            updateScores();
+            updateScore();
 
 
             gameStateSpace.getAll(new FormalField(String.class));
@@ -64,7 +51,7 @@ public class Main {
         }
     }
 
-    private static void updateScores() {
+    private static void updateScore() {
 
     }
 
