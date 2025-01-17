@@ -37,7 +37,7 @@ public class Main {
             long startTimestamp = System.currentTimeMillis();
 
             List<UserAnswerWithTimestamp> answersWrapper = answerGetter.getAnswers(waitTime, playerSpace.size());
-            checkForStalePlayers(answersWrapper, playerSpace);
+            //checkForStalePlayers(answersWrapper, playerSpace);
 
             updateAllScores(answersWrapper, startTimestamp, correctAnswer, playerSpace, waitTime);
 
