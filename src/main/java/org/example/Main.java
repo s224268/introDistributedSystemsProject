@@ -8,10 +8,13 @@ import org.jspace.FormalField;
 import org.jspace.Space;
 
 import java.io.IOException;
-import java.util.List;
+import java.util.*;
 
 
 public class Main {
+
+    private static Map<String, Integer> stalePlayers = new HashMap<String, Integer>();
+
 
     public static void main(String[] argv) throws InterruptedException, IOException {
         Repository r = new Repository();
@@ -21,41 +24,82 @@ public class Main {
         Space answerSpace = r.getAnswerSpace();
 
         AnswerGetter answerGetter = new AnswerGetter(answerSpace);
+
         int waitTime = 30;
         int countOfRounds = 0;
 
 
         while (true) {
 
-            for (int i = 0; i < 2; i++) {
-                playerSpace.query(new FormalField(String.class), new FormalField(String.class), new FormalField(Integer.class));
-            }
-
-
             countOfRounds++;
             String correctAnswer = getNewQnA(questionSpace);
-            gameStateSpace.put("ANSWERING");
+            gameStateSpace.put(GameState.ANSWERING);
             long startTimestamp = System.currentTimeMillis();
 
-            // Here threading for waiting for answers
+            List<UserAnswerWithTimestamp> answersWrapper = answerGetter.getAnswers(waitTime, playerSpace.size());
+            //checkForStalePlayers(answersWrapper, playerSpace);
 
-            List<UserAnswerWithTimestamp> answersWrapper = answerGetter.getAnswers(waitTime, playerSpace.size()); // ANTON HERE
             updateAllScores(answersWrapper, startTimestamp, correctAnswer, playerSpace, waitTime);
 
 
             gameStateSpace.getAll(new FormalField(String.class));
-            gameStateSpace.put("SHOWING");
+            gameStateSpace.put(GameState.SHOWING);
 
             Thread.sleep(5000);
 
             if (countOfRounds == 10) {
                 gameStateSpace.getAll(new FormalField(String.class));
-                gameStateSpace.put("FINAL");
+                gameStateSpace.put(GameState.FINAL);
                 Thread.sleep(5000);
                 countOfRounds = 0;
             }
         }
     }
+
+    private static void checkForStalePlayers(List<UserAnswerWithTimestamp> answers, Space playerSpace) {
+        Set<String> playerIDs = new HashSet<>();
+        try {
+            // Fetch all players currently in the playerSpace
+            List<Object[]> rawData = playerSpace.queryAll();
+            for (Object[] tuple : rawData) {
+                playerIDs.add((String) tuple[1]);
+            }
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e + " This shouldn't be interrupted");
+        }
+
+        // Create a set of IDs from players who answered this round
+        Set<String> playersWhoAnswered = new HashSet<>();
+        for (UserAnswerWithTimestamp answer : answers) {
+            playersWhoAnswered.add(answer.ID);
+        }
+
+        // Update the stalePlayers map
+        for (String playerID : playerIDs) {
+            if (!playersWhoAnswered.contains(playerID)) {
+                // Increment the count for players who did not answer
+                stalePlayers.put(playerID, stalePlayers.getOrDefault(playerID, 0) + 1);
+            } else {
+                // Reset the count for players who did answer
+                stalePlayers.put(playerID, 0);
+            }
+        }
+
+        // Remove players who have been stale for 2 or more rounds
+        for (Iterator<Map.Entry<String, Integer>> iterator = stalePlayers.entrySet().iterator(); iterator.hasNext();) {
+            Map.Entry<String, Integer> entry = iterator.next();
+            if (entry.getValue() >= 2) {
+                System.out.println("Player " + entry.getKey() + " has been removed for being inactive for 2 rounds.");
+                try {
+                    playerSpace.get(new FormalField(String.class), new ActualField(entry.getKey()), new FormalField(Integer.class));
+                } catch (InterruptedException e) {
+                    throw new RuntimeException("Error removing stale player: " + e.getMessage());
+                }
+                iterator.remove();
+            }
+        }
+    }
+
 
 
     private static void updateAllScores(List<UserAnswerWithTimestamp> answerWrapper, long startTimestamp, String correctAnswer, Space players, int waitTime) {
