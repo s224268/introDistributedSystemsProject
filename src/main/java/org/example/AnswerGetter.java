@@ -7,12 +7,13 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
 
-class AnswerGetter {
+import static java.lang.Thread.sleep;
+public class AnswerGetter {
     private Space space;
     private CountDownLatch latch = new CountDownLatch(1);
     private List<UserAnswerWithTimestamp> answersWithTimestamps;
 
-    AnswerGetter(Space space) {
+    public AnswerGetter(Space space) {
         this.answersWithTimestamps = new LinkedList<>();
         this.space = space;
     }
@@ -54,7 +55,7 @@ class InternalTimer extends Thread {
     @Override
     public void run() {
         try {
-            Thread.sleep(wait * 1000L);
+            sleep(wait * 1000L);
         } catch (InterruptedException e) {
             System.out.println("Timer was stopped prematurely because all players answered. This is fine");
             return;
@@ -91,7 +92,8 @@ class AnswerCounter extends Thread {
         }
         while (answers.size() < maxPlayerCount) {
             try {
-                Object[] tuple = space.get(new FormalField(String.class), new FormalField(String.class)); //TODO: Check if this pattern works
+
+                Object[] tuple = space.get(new FormalField(String.class), new FormalField(String.class), new FormalField(Long.class)); //TODO: Check if this pattern works
                 String answerString = (String) tuple[0];
                 String ID = (String) tuple[1];
                 Long timeStamp = System.currentTimeMillis();
@@ -99,14 +101,15 @@ class AnswerCounter extends Thread {
                 ans.answer = answerString;
                 ans.ID = ID;
                 ans.timeStamp = timeStamp;
-                answers.add(ans);
+                answers.add(ans); //Should be atomic
 
             } catch (InterruptedException e) {
                 System.out.println("Answer count was not reached in time");
                 break;
             }
         }
-        latch.countDown();
         done = true;
+        latch.countDown();
+
     }
 }
