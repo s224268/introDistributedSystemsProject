@@ -31,6 +31,11 @@ public class Main {
         int waitTime = 30;
         int countOfRounds = 0;
 
+        /* Maybe like this? I guess it doesnt work when one joins, then quits, then another joins
+        Object[] firstplayer = playerSpace.get(new FormalField(String.class), new FormalField(String.class), new FormalField(Integer.class));
+        playerSpace.query(new FormalField(String.class), new FormalField(String.class), new FormalField(Integer.class));
+        playerSpace.put(firstplayer);
+        */
         while (playerSpace.size() < 2) { //TODO: Make this not busy wait. Get() the first player,
             // then query() until the second player, then re-add the first player
             Thread.sleep(5000);
