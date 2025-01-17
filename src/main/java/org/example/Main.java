@@ -28,15 +28,20 @@ public class Main {
         int waitTime = 30;
         int countOfRounds = 0;
 
-        for (int i = 0; i < 2; i++) {
-            playerSpace.query(new FormalField(String.class), new FormalField(String.class), new FormalField(Integer.class));
+        while (playerSpace.size() < 2) {
+            Thread.sleep(1000);
         }
 
+        List<Object[]> playersJoined = playerSpace.queryAll(new FormalField(String.class), new FormalField(String.class), new FormalField(Integer.class));
+        for (Object[] player : playersJoined) {
+            System.out.println("Player joined: " + player[0] + ", " + player[1] + ", " + player[2]);
+        }
 
         while (true) {
 
             countOfRounds++;
             String correctAnswer = getNewQnA(questionSpace);
+
             gameStateSpace.put("ANSWERING");
             long startTimestamp = System.currentTimeMillis();
 
@@ -45,6 +50,7 @@ public class Main {
 
             updateAllScores(answersWrapper, startTimestamp, correctAnswer, playerSpace, waitTime);
 
+            Thread.sleep(5000);
 
             gameStateSpace.getAll(new FormalField(String.class));
             gameStateSpace.put("SHOWING");
