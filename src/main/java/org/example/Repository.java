@@ -31,18 +31,18 @@ public class Repository {
     }
 
     public Space getPlayerSpace() {
-        return playerSpace;
+        return this.playerSpace;
     }
 
     public Space getQuestionSpace() {
-        return questionSpace;
+        return this.questionSpace;
     }
 
     public Space getGameStateSpace() {
-        return gameStateSpace;
+        return this.gameStateSpace;
     }
 
     public Space getAnswerSpace() {
-        return answerSpace;
+        return this.answerSpace;
     }
 }
