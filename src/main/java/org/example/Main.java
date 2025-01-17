@@ -17,6 +17,9 @@ public class Main {
 
 
     public static void main(String[] argv) throws InterruptedException, IOException {
+        while (true) {
+
+
         Repository r = new Repository();
         Space playerSpace = r.getPlayerSpace();
         Space questionSpace = r.getQuestionSpace();
@@ -29,19 +32,16 @@ public class Main {
         int countOfRounds = 0;
 
         while (playerSpace.size() < 2) {
-            Thread.sleep(1000);
-        }
-
-        List<Object[]> playersJoined = playerSpace.queryAll(new FormalField(String.class), new FormalField(String.class), new FormalField(Integer.class));
-        for (Object[] player : playersJoined) {
-            System.out.println("Player joined: " + player[0] + ", " + player[1] + ", " + player[2]);
+            Thread.sleep(5000);
+            playerSpace.put("Player", UUID.randomUUID().toString(), 0);
+            System.out.println("Waiting for players to join...");
         }
 
         while (true) {
 
             countOfRounds++;
             String correctAnswer = getNewQnA(questionSpace);
-
+            gameStateSpace.getAll(new FormalField(String.class));
             gameStateSpace.put("ANSWERING");
             long startTimestamp = System.currentTimeMillis();
 
@@ -49,7 +49,7 @@ public class Main {
             //checkForStalePlayers(answersWrapper, playerSpace);
 
             updateAllScores(answersWrapper, startTimestamp, correctAnswer, playerSpace, waitTime);
-
+            System.out.println("After score update");
             Thread.sleep(5000);
 
             gameStateSpace.getAll(new FormalField(String.class));
@@ -58,11 +58,16 @@ public class Main {
             Thread.sleep(5000);
 
             if (countOfRounds == 10) {
+                System.out.println("Round 10");
                 gameStateSpace.getAll(new FormalField(String.class));
                 gameStateSpace.put("FINAL");
                 Thread.sleep(5000);
                 countOfRounds = 0;
+                if (playerSpace.size() < 2) {
+                    break;
+                }
             }
+        }
         }
     }
 
