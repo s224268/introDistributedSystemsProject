@@ -31,7 +31,8 @@ public class Main {
         int waitTime = 30;
         int countOfRounds = 0;
 
-        while (playerSpace.size() < 2) {
+        while (playerSpace.size() < 2) { //TODO: Make this not busy wait. Get() the first player,
+            // then query() until the second player, then re-add the first player
             Thread.sleep(5000);
             playerSpace.put("Player", UUID.randomUUID().toString(), 0);
             System.out.println("Waiting for players to join...");
