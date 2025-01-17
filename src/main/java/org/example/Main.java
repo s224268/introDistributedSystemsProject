@@ -28,12 +28,16 @@ public class Main {
         int waitTime = 30;
         int countOfRounds = 0;
 
+        for (int i = 0; i < 2; i++) {
+            playerSpace.query(new FormalField(String.class), new FormalField(String.class), new FormalField(Integer.class));
+        }
+
 
         while (true) {
 
             countOfRounds++;
             String correctAnswer = getNewQnA(questionSpace);
-            gameStateSpace.put(GameState.ANSWERING);
+            gameStateSpace.put("ANSWERING");
             long startTimestamp = System.currentTimeMillis();
 
             List<UserAnswerWithTimestamp> answersWrapper = answerGetter.getAnswers(waitTime, playerSpace.size());
@@ -43,13 +47,13 @@ public class Main {
 
 
             gameStateSpace.getAll(new FormalField(String.class));
-            gameStateSpace.put(GameState.SHOWING);
+            gameStateSpace.put("SHOWING");
 
             Thread.sleep(5000);
 
             if (countOfRounds == 10) {
                 gameStateSpace.getAll(new FormalField(String.class));
-                gameStateSpace.put(GameState.FINAL);
+                gameStateSpace.put("FINAL");
                 Thread.sleep(5000);
                 countOfRounds = 0;
             }
