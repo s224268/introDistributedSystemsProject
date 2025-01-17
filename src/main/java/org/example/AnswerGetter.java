@@ -93,7 +93,7 @@ class AnswerCounter extends Thread {
         while (answers.size() < maxPlayerCount) {
             try {
 
-                Object[] tuple = space.get(new FormalField(String.class), new FormalField(String.class), new FormalField(Long.class)); //TODO: Check if this pattern works
+                Object[] tuple = space.get(new FormalField(String.class), new FormalField(String.class), new FormalField(int.class)); //TODO: Check if this pattern works
                 String answerString = (String) tuple[0];
                 String ID = (String) tuple[1];
                 Long timeStamp = System.currentTimeMillis();
