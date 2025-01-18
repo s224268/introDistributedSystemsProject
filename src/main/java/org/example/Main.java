@@ -13,13 +13,7 @@ import java.util.*;
 
 public class Main {
 
-    private static Map<String, Integer> stalePlayers = new HashMap<String, Integer>();
-
-
     public static void main(String[] argv) throws InterruptedException, IOException {
-        while (true) {
-
-
         Repository r = new Repository();
         Space playerSpace = r.getPlayerSpace();
         Space questionSpace = r.getQuestionSpace();
@@ -30,48 +24,59 @@ public class Main {
 
         int waitTime = 30;
         int countOfRounds = 0;
-            playerSpace.put("Player", UUID.randomUUID().toString(), 0);
 
-            System.out.println("waiting player 1");
-        Object[] firstplayer = playerSpace.get(new FormalField(String.class), new FormalField(String.class), new FormalField(Integer.class));
-            System.out.println("waiting player 2");
+        // Wait for two players to join
+        System.out.println("waiting player 1");
         playerSpace.query(new FormalField(String.class), new FormalField(String.class), new FormalField(Integer.class));
-        playerSpace.put(firstplayer);
+        System.out.println("waiting player 2");
+        playerSpace.query(new FormalField(String.class), new FormalField(String.class), new FormalField(Integer.class));
+        System.out.println("Starting game");
 
         while (true) {
-
             countOfRounds++;
+
+            // Set up question
             String correctAnswer = getNewQnA(questionSpace);
-            gameStateSpace.getAll(new FormalField(String.class));
             gameStateSpace.put("ANSWERING");
+            System.out.println("ANSWERING STATE");
             long startTimestamp = System.currentTimeMillis();
 
+            // Get answers
             List<UserAnswerWithTimestamp> answersWrapper = answerGetter.getAnswers(waitTime, playerSpace.size());
-            //checkForStalePlayers(answersWrapper, playerSpace);
+            System.out.println("Answers received: " + answersWrapper.size());
 
+            // Update scores
             updateAllScores(answersWrapper, startTimestamp, correctAnswer, playerSpace, waitTime);
-            System.out.println("After score update");
 
+            // Delay before showing results
+            Thread.sleep(5000);
             gameStateSpace.getAll(new FormalField(String.class));
             gameStateSpace.put("SHOWING");
+            System.out.println("SHOWING STATE");
 
             Thread.sleep(5000);
 
+            answerSpace.getAll(new FormalField(String.class), new FormalField(String.class));
+            gameStateSpace.getAll(new FormalField(String.class)); // Reset state
+
             if (countOfRounds == 10) {
-                System.out.println("Round 10");
-                gameStateSpace.getAll(new FormalField(String.class));
+                System.out.println("Round 10 completed. Transitioning to FINAL...");
                 gameStateSpace.put("FINAL");
+                System.out.println("FINAL STATE");
                 Thread.sleep(5000);
                 countOfRounds = 0;
+
+                // Check if enough players remain
                 if (playerSpace.size() < 2) {
+                    System.out.println("Not enough players to continue. Exiting...");
                     break;
                 }
             }
-        }
+            gameStateSpace.getAll(new FormalField(String.class));
         }
     }
 
-    private static void checkForStalePlayers(List<UserAnswerWithTimestamp> answers, Space playerSpace) {
+    /*private static void checkForStalePlayers(List<UserAnswerWithTimestamp> answers, Space playerSpace) {
         Set<String> playerIDs = new HashSet<>();
         try {
             // Fetch all players currently in the playerSpace
@@ -113,7 +118,7 @@ public class Main {
                 iterator.remove();
             }
         }
-    }
+    }*/
 
 
 
@@ -156,7 +161,7 @@ public class Main {
             return "Not enough words retrieved from the API.";
         }
 
-        question.getAll(new FormalField(Object.class), new FormalField(Object.class), new FormalField(Object.class), new FormalField(Object.class));
+        question.getAll(new FormalField(String.class), new FormalField(String.class), new FormalField(String.class), new FormalField(String.class));
         String meaning = response.get(0).getMeaning();
         String word1 = response.get(0).getWord();
         String word2 = response.get(1).getWord();

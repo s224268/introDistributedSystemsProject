@@ -19,6 +19,8 @@ public class AnswerGetter {
     }
 
     public List<UserAnswerWithTimestamp> getAnswers(int waitTime, int maxPlayerCount) {
+        latch = new CountDownLatch(1); // Reset latch yo
+
         InternalTimer internalTimer = new InternalTimer(waitTime, latch);
         AnswerCounter answerCounter = new AnswerCounter(maxPlayerCount, latch, space);
 
@@ -27,18 +29,23 @@ public class AnswerGetter {
 
         try {
             latch.await();
-            internalTimer.interrupt();
-            answerCounter.interrupt();
-            internalTimer.join(); //TODO: This works right?
+
+            if (internalTimer.isAlive()) internalTimer.interrupt();
+            if (answerCounter.isAlive()) answerCounter.interrupt();
+
+            internalTimer.join();
             answerCounter.join();
+
             answersWithTimestamps = answerCounter.getAnswers();
         } catch (InterruptedException e) {
-            System.out.println("IDK who interrupted my thing, but you need to stop");
-            throw new Error("");
+            System.out.println("Main thread was interrupted during answer collection.");
+            throw new Error(e);
         }
+
         if (answersWithTimestamps == null) {
-            throw new NullPointerException("Idk how this happened");
+            throw new NullPointerException("Answers list was null. Something went wrong.");
         }
+
         return answersWithTimestamps;
     }
 }
@@ -93,7 +100,7 @@ class AnswerCounter extends Thread {
         while (answers.size() < maxPlayerCount) {
             try {
 
-                Object[] tuple = space.get(new FormalField(String.class), new FormalField(String.class), new FormalField(int.class)); //TODO: Check if this pattern works
+                Object[] tuple = space.get(new FormalField(String.class), new FormalField(String.class)); //TODO: Check if this pattern works
                 String answerString = (String) tuple[0];
                 String ID = (String) tuple[1];
                 Long timeStamp = System.currentTimeMillis();
