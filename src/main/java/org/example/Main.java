@@ -18,8 +18,6 @@ public class Main {
 
     public static void main(String[] argv) throws InterruptedException, IOException {
         while (true) {
-
-
             Repository r = new Repository();
             Space playerSpace = r.getPlayerSpace();
             Space questionSpace = r.getQuestionSpace();
@@ -48,8 +46,9 @@ public class Main {
                 System.out.println(tuple[0]);
 
                 List<UserAnswerWithTimestamp> answersWrapper = answerGetter.getAnswers(waitTime, playerSpace.size());
-                //checkForStalePlayers(answersWrapper, playerSpace);
-
+//                System.out.println(playerSpace.size());
+//                checkForStalePlayers(answersWrapper, playerSpace);
+//                System.out.println(playerSpace.size());
 
                 updateAllScores(answersWrapper, startTimestamp, correctAnswer, playerSpace, waitTime);
                 System.out.println("After score update");
@@ -113,6 +112,7 @@ public class Main {
                 System.out.println("Player " + entry.getKey() + " has been removed for being inactive for 2 rounds.");
                 try {
                     playerSpace.get(new FormalField(String.class), new ActualField(entry.getKey()), new FormalField(Integer.class));
+                    System.out.printf("Player has been removed");
                 } catch (InterruptedException e) {
                     throw new RuntimeException("Error removing stale player: " + e.getMessage());
                 }
