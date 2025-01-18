@@ -98,6 +98,7 @@ class AnswerCounter extends Thread {
                 String answerString = (String) tuple[0];
                 String ID = (String) tuple[1];
                 Long timeStamp = System.currentTimeMillis();
+                System.out.println("Answer: " + answerString + " From: " + ID + " At: " + timeStamp);
                 UserAnswerWithTimestamp ans = new UserAnswerWithTimestamp();
                 ans.answer = answerString;
                 ans.ID = ID;
