@@ -13,71 +13,64 @@ import java.util.*;
 
 public class Main {
 
-    private static Map<String, Integer> stalePlayers = new HashMap<String, Integer>();
-
-
     public static void main(String[] argv) throws InterruptedException, IOException {
+        Repository r = new Repository();
+        Space playerSpace = r.getPlayerSpace();
+        Space questionSpace = r.getQuestionSpace();
+        Space gameStateSpace = r.getGameStateSpace();
+        Space answerSpace = r.getAnswerSpace();
+
+        AnswerGetter answerGetter = new AnswerGetter(answerSpace);
+
+        int waitTime = 30;
+        int countOfRounds = 0;
+
+        System.out.println("waiting player 1");
+        playerSpace.query(new FormalField(String.class), new FormalField(String.class), new FormalField(Integer.class));
+        System.out.println("waiting player 2");
+        playerSpace.query(new FormalField(String.class), new FormalField(String.class), new FormalField(Integer.class));
+        System.out.println("Starting game");
+
         while (true) {
+            countOfRounds++;
 
+            String correctAnswer = getNewQnA(questionSpace);
+            gameStateSpace.put("ANSWERING");
+            System.out.println("ANSWERING STATE");
+            long startTimestamp = System.currentTimeMillis();
 
-            Repository r = new Repository();
-            Space playerSpace = r.getPlayerSpace();
-            Space questionSpace = r.getQuestionSpace();
-            Space gameStateSpace = r.getGameStateSpace();
-            Space answerSpace = r.getAnswerSpace();
+            List<UserAnswerWithTimestamp> answersWrapper = answerGetter.getAnswers(waitTime, playerSpace.size());
+            System.out.println("Answers received: " + answersWrapper.size());
 
-            AnswerGetter answerGetter = new AnswerGetter(answerSpace);
+            updateAllScores(answersWrapper, startTimestamp, correctAnswer, playerSpace, waitTime);
 
-            int waitTime = 30;
-            int countOfRounds = 0;
-            playerSpace.put("Player", UUID.randomUUID().toString(), 0);
+            Thread.sleep(5000);
+            gameStateSpace.getAll(new FormalField(String.class));
+            gameStateSpace.put("SHOWING");
+            System.out.println("SHOWING STATE");
 
-            System.out.println("waiting player 1");
-            Object[] firstplayer = playerSpace.get(new FormalField(String.class), new FormalField(String.class), new FormalField(Integer.class));
-            System.out.println("waiting player 2");
-            playerSpace.query(new FormalField(String.class), new FormalField(String.class), new FormalField(Integer.class));
-            playerSpace.put(firstplayer);
+            Thread.sleep(5000);
 
-            while (true) {
-                countOfRounds++;
-                String correctAnswer = getNewQnA(questionSpace);
-                gameStateSpace.getAll(new FormalField(String.class));
-                gameStateSpace.put("ANSWERING");
-                long startTimestamp = System.currentTimeMillis();
-                Object[] tuple = gameStateSpace.query(new FormalField(String.class));
-                System.out.println(tuple[0]);
+            answerSpace.getAll(new FormalField(String.class), new FormalField(String.class));
+            gameStateSpace.getAll(new FormalField(String.class)); // Reset state
 
-                List<UserAnswerWithTimestamp> answersWrapper = answerGetter.getAnswers(waitTime, playerSpace.size());
-                //checkForStalePlayers(answersWrapper, playerSpace);
-
-
-                updateAllScores(answersWrapper, startTimestamp, correctAnswer, playerSpace, waitTime);
-                System.out.println("After score update");
-
-                gameStateSpace.getAll(new FormalField(String.class));
-                gameStateSpace.put("SHOWING");
-                Object[] tuple1 = gameStateSpace.query(new FormalField(String.class));
-                System.out.println(tuple1[0]);
-
+            if (countOfRounds == 10) {
+                System.out.println("Round 10 completed. Transitioning to FINAL...");
+                gameStateSpace.put("FINAL");
+                System.out.println("FINAL STATE");
                 Thread.sleep(5000);
+                countOfRounds = 0;
 
-                if (countOfRounds == 10) {
-                    System.out.println("Round 10");
-                    gameStateSpace.getAll(new FormalField(String.class));
-                    gameStateSpace.put("FINAL");
-                    Object[] tuple2 = gameStateSpace.query(new FormalField(String.class));
-                    System.out.println(tuple2[0]);
-                    Thread.sleep(5000);
-                    countOfRounds = 0;
-                    if (playerSpace.size() < 2) {
-                        break;
-                    }
+                if (playerSpace.size() < 2) {
+                    System.out.println("Not enough players to continue. Exiting...");
+                    break;
                 }
             }
+            gameStateSpace.getAll(new FormalField(String.class));
         }
     }
 
-    private static void checkForStalePlayers(List<UserAnswerWithTimestamp> answers, Space playerSpace) {
+    /*private static void checkForStalePlayers(List<UserAnswerWithTimestamp> answers, Space playerSpace) {
         Set<String> playerIDs = new HashSet<>();
         try {
             // Fetch all players currently in the playerSpace
@@ -119,7 +112,7 @@ public class Main {
                 iterator.remove();
             }
         }
-    }
+    }*/
 
 
 
@@ -162,7 +155,7 @@ public class Main {
             return "Not enough words retrieved from the API.";
         }
 
-        question.getAll(new FormalField(Object.class), new FormalField(Object.class), new FormalField(Object.class), new FormalField(Object.class));
+        question.getAll(new FormalField(String.class), new FormalField(String.class), new FormalField(String.class), new FormalField(String.class));
         String meaning = response.get(0).getMeaning();
         String word1 = response.get(0).getWord();
         String word2 = response.get(1).getWord();

@@ -6,6 +6,8 @@ import org.jspace.Space;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
+
+import static java.lang.Thread.sleep;
 public class AnswerGetter {
     private Space space;
     private CountDownLatch latch = new CountDownLatch(1);
@@ -17,6 +19,8 @@ public class AnswerGetter {
     }
 
     public List<UserAnswerWithTimestamp> getAnswers(int waitTime, int maxPlayerCount) {
+        latch = new CountDownLatch(1); // Reset latch yo
+
         InternalTimer internalTimer = new InternalTimer(waitTime, latch);
         AnswerCounter answerCounter = new AnswerCounter(maxPlayerCount, latch, space);
 
@@ -25,19 +29,23 @@ public class AnswerGetter {
 
         try {
             latch.await();
-            internalTimer.interrupt();
-            answerCounter.interrupt();
-            internalTimer.join(); //TODO: This works right?
+
+            if (internalTimer.isAlive()) internalTimer.interrupt();
+            if (answerCounter.isAlive()) answerCounter.interrupt();
+
+            internalTimer.join();
             answerCounter.join();
+
             answersWithTimestamps = answerCounter.getAnswers();
         } catch (InterruptedException e) {
-            System.out.println("IDK who interrupted my thing, but you need to stop");
-            throw new Error("");
+            System.out.println("Main thread was interrupted during answer collection.");
+            throw new Error(e);
         }
+
         if (answersWithTimestamps == null) {
-            throw new NullPointerException("Idk how this happened");
+            throw new NullPointerException("Answers list was null. Something went wrong.");
         }
-        latch = new CountDownLatch(1);
+
         return answersWithTimestamps;
     }
 }
@@ -77,8 +85,6 @@ class AnswerCounter extends Thread {
         answers = new LinkedList<UserAnswerWithTimestamp>();
     }
 
-
-
     List<UserAnswerWithTimestamp> getAnswers() {
         if (!done) {
             throw new RuntimeException("Called getAnswers before thread was fully finished: Join before calling");
@@ -98,7 +104,6 @@ class AnswerCounter extends Thread {
                 String answerString = (String) tuple[0];
                 String ID = (String) tuple[1];
                 Long timeStamp = System.currentTimeMillis();
-                System.out.println("Answer: " + answerString + " From: " + ID + " At: " + timeStamp);
                 UserAnswerWithTimestamp ans = new UserAnswerWithTimestamp();
                 ans.answer = answerString;
                 ans.ID = ID;
@@ -111,9 +116,7 @@ class AnswerCounter extends Thread {
             }
         }
         done = true;
-        System.out.println("ANSWERS:" + space.size());
         latch.countDown();
-
 
     }
 }
