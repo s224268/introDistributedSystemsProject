@@ -39,21 +39,25 @@ public class Main {
             playerSpace.put(firstplayer);
 
             while (true) {
-
                 countOfRounds++;
                 String correctAnswer = getNewQnA(questionSpace);
                 gameStateSpace.getAll(new FormalField(String.class));
                 gameStateSpace.put("ANSWERING");
                 long startTimestamp = System.currentTimeMillis();
+                Object[] tuple = gameStateSpace.query(new FormalField(String.class));
+                System.out.println(tuple[0]);
 
                 List<UserAnswerWithTimestamp> answersWrapper = answerGetter.getAnswers(waitTime, playerSpace.size());
                 //checkForStalePlayers(answersWrapper, playerSpace);
+
 
                 updateAllScores(answersWrapper, startTimestamp, correctAnswer, playerSpace, waitTime);
                 System.out.println("After score update");
 
                 gameStateSpace.getAll(new FormalField(String.class));
                 gameStateSpace.put("SHOWING");
+                Object[] tuple1 = gameStateSpace.query(new FormalField(String.class));
+                System.out.println(tuple1[0]);
 
                 Thread.sleep(5000);
 
@@ -61,6 +65,8 @@ public class Main {
                     System.out.println("Round 10");
                     gameStateSpace.getAll(new FormalField(String.class));
                     gameStateSpace.put("FINAL");
+                    Object[] tuple2 = gameStateSpace.query(new FormalField(String.class));
+                    System.out.println(tuple2[0]);
                     Thread.sleep(5000);
                     countOfRounds = 0;
                     if (playerSpace.size() < 2) {

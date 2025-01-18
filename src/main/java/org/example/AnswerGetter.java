@@ -6,8 +6,6 @@ import org.jspace.Space;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
-
-import static java.lang.Thread.sleep;
 public class AnswerGetter {
     private Space space;
     private CountDownLatch latch = new CountDownLatch(1);
@@ -93,7 +91,7 @@ class AnswerCounter extends Thread {
         while (answers.size() < maxPlayerCount) {
             try {
 
-                Object[] tuple = space.get(new FormalField(String.class), new FormalField(String.class), new FormalField(int.class)); //TODO: Check if this pattern works
+                Object[] tuple = space.get(new FormalField(String.class), new FormalField(String.class)); //TODO: Check if this pattern works
                 String answerString = (String) tuple[0];
                 String ID = (String) tuple[1];
                 Long timeStamp = System.currentTimeMillis();
@@ -109,7 +107,9 @@ class AnswerCounter extends Thread {
             }
         }
         done = true;
+        System.out.println("ANSWERS:" + space.size());
         latch.countDown();
+
 
     }
 }
