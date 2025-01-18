@@ -25,7 +25,6 @@ public class Main {
         int waitTime = 30;
         int countOfRounds = 0;
 
-        // Wait for two players to join
         System.out.println("waiting player 1");
         playerSpace.query(new FormalField(String.class), new FormalField(String.class), new FormalField(Integer.class));
         System.out.println("waiting player 2");
@@ -35,20 +34,16 @@ public class Main {
         while (true) {
             countOfRounds++;
 
-            // Set up question
             String correctAnswer = getNewQnA(questionSpace);
             gameStateSpace.put("ANSWERING");
             System.out.println("ANSWERING STATE");
             long startTimestamp = System.currentTimeMillis();
 
-            // Get answers
             List<UserAnswerWithTimestamp> answersWrapper = answerGetter.getAnswers(waitTime, playerSpace.size());
             System.out.println("Answers received: " + answersWrapper.size());
 
-            // Update scores
             updateAllScores(answersWrapper, startTimestamp, correctAnswer, playerSpace, waitTime);
 
-            // Delay before showing results
             Thread.sleep(5000);
             gameStateSpace.getAll(new FormalField(String.class));
             gameStateSpace.put("SHOWING");
@@ -66,7 +61,6 @@ public class Main {
                 Thread.sleep(5000);
                 countOfRounds = 0;
 
-                // Check if enough players remain
                 if (playerSpace.size() < 2) {
                     System.out.println("Not enough players to continue. Exiting...");
                     break;
