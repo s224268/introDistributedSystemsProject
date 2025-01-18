@@ -44,12 +44,12 @@ public class Main {
 
             updateAllScores(answersWrapper, startTimestamp, correctAnswer, playerSpace, waitTime);
 
-            Thread.sleep(5000);
+            Thread.sleep(200);
             gameStateSpace.getAll(new FormalField(String.class));
             gameStateSpace.put("SHOWING");
             System.out.println("SHOWING STATE");
 
-            Thread.sleep(5000);
+            Thread.sleep(200);
 
             answerSpace.getAll(new FormalField(String.class), new FormalField(String.class));
             gameStateSpace.getAll(new FormalField(String.class)); // Reset state
@@ -58,8 +58,8 @@ public class Main {
                 System.out.println("Round 10 completed. Transitioning to FINAL...");
                 gameStateSpace.put("FINAL");
                 System.out.println("FINAL STATE");
-                Thread.sleep(5000);
-                countOfRounds = 0;
+                Thread.sleep(200);
+                countOfRounds = 200;
 
                 if (playerSpace.size() < 2) {
                     System.out.println("Not enough players to continue. Exiting...");
