@@ -20,60 +20,54 @@ public class Main {
         while (true) {
 
 
-        Repository r = new Repository();
-        Space playerSpace = r.getPlayerSpace();
-        Space questionSpace = r.getQuestionSpace();
-        Space gameStateSpace = r.getGameStateSpace();
-        Space answerSpace = r.getAnswerSpace();
+            Repository r = new Repository();
+            Space playerSpace = r.getPlayerSpace();
+            Space questionSpace = r.getQuestionSpace();
+            Space gameStateSpace = r.getGameStateSpace();
+            Space answerSpace = r.getAnswerSpace();
 
-        AnswerGetter answerGetter = new AnswerGetter(answerSpace);
+            AnswerGetter answerGetter = new AnswerGetter(answerSpace);
 
-        int waitTime = 30;
-        int countOfRounds = 0;
-
-        /* Maybe like this? I guess it doesnt work when one joins, then quits, then another joins
-        Object[] firstplayer = playerSpace.get(new FormalField(String.class), new FormalField(String.class), new FormalField(Integer.class));
-        playerSpace.query(new FormalField(String.class), new FormalField(String.class), new FormalField(Integer.class));
-        playerSpace.put(firstplayer);
-        */
-        while (playerSpace.size() < 2) { //TODO: Make this not busy wait. Get() the first player,
-            // then query() until the second player, then re-add the first player
-            Thread.sleep(5000);
+            int waitTime = 30;
+            int countOfRounds = 0;
             playerSpace.put("Player", UUID.randomUUID().toString(), 0);
-            System.out.println("Waiting for players to join...");
-        }
 
-        while (true) {
+            System.out.println("waiting player 1");
+            Object[] firstplayer = playerSpace.get(new FormalField(String.class), new FormalField(String.class), new FormalField(Integer.class));
+            System.out.println("waiting player 2");
+            playerSpace.query(new FormalField(String.class), new FormalField(String.class), new FormalField(Integer.class));
+            playerSpace.put(firstplayer);
 
-            countOfRounds++;
-            String correctAnswer = getNewQnA(questionSpace);
-            gameStateSpace.getAll(new FormalField(String.class));
-            gameStateSpace.put("ANSWERING");
-            long startTimestamp = System.currentTimeMillis();
+            while (true) {
 
-            List<UserAnswerWithTimestamp> answersWrapper = answerGetter.getAnswers(waitTime, playerSpace.size());
-            //checkForStalePlayers(answersWrapper, playerSpace);
-
-            updateAllScores(answersWrapper, startTimestamp, correctAnswer, playerSpace, waitTime);
-            System.out.println("After score update");
-            Thread.sleep(5000);
-
-            gameStateSpace.getAll(new FormalField(String.class));
-            gameStateSpace.put("SHOWING");
-
-            Thread.sleep(5000);
-
-            if (countOfRounds == 10) {
-                System.out.println("Round 10");
+                countOfRounds++;
+                String correctAnswer = getNewQnA(questionSpace);
                 gameStateSpace.getAll(new FormalField(String.class));
-                gameStateSpace.put("FINAL");
+                gameStateSpace.put("ANSWERING");
+                long startTimestamp = System.currentTimeMillis();
+
+                List<UserAnswerWithTimestamp> answersWrapper = answerGetter.getAnswers(waitTime, playerSpace.size());
+                //checkForStalePlayers(answersWrapper, playerSpace);
+
+                updateAllScores(answersWrapper, startTimestamp, correctAnswer, playerSpace, waitTime);
+                System.out.println("After score update");
+
+                gameStateSpace.getAll(new FormalField(String.class));
+                gameStateSpace.put("SHOWING");
+
                 Thread.sleep(5000);
-                countOfRounds = 0;
-                if (playerSpace.size() < 2) {
-                    break;
+
+                if (countOfRounds == 10) {
+                    System.out.println("Round 10");
+                    gameStateSpace.getAll(new FormalField(String.class));
+                    gameStateSpace.put("FINAL");
+                    Thread.sleep(5000);
+                    countOfRounds = 0;
+                    if (playerSpace.size() < 2) {
+                        break;
+                    }
                 }
             }
-        }
         }
     }
 
