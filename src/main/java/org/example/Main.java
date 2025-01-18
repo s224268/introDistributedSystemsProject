@@ -35,9 +35,18 @@ public class Main {
         System.out.println("Starting game");
 
         while (true) {
+            // New round
             countOfRounds++;
 
+
+            // --------------------------
+            // Answering state
+            // The users can now answer within a given time frame or till
+            // all users have answered before timer runs out
+
+            // Retrieve and send the next question (question, answer (correct), answer, answer)
             String correctAnswer = getNewQnA(questionSpace);
+
             gameStateSpace.put("ANSWERING");
             System.out.println("ANSWERING STATE");
             long startTimestamp = System.currentTimeMillis();
@@ -45,25 +54,31 @@ public class Main {
             List<UserAnswerWithTimestamp> answersWrapper = answerGetter.getAnswers(waitTime, playerSpace.size());
             System.out.println("Answers received: " + answersWrapper.size());
 
+            // --------------------------
+            // Showing State
+            // The answer and score updates are shared with the clients
             updateAllScores(answersWrapper, startTimestamp, correctAnswer, playerSpace, waitTime);
-
             Thread.sleep(200);
             gameStateSpace.getAll(new FormalField(String.class));
             gameStateSpace.put("SHOWING");
             System.out.println("SHOWING STATE");
 
-            Thread.sleep(200);
+            Thread.sleep(3000);
 
             answerSpace.getAll(new FormalField(String.class), new FormalField(String.class));
             gameStateSpace.getAll(new FormalField(String.class)); // Reset state
 
+            // --------------------------
+            // Final State
+            // All rounds have been run and the game ends
             if (countOfRounds == 10) {
                 System.out.println("Round 10 completed. Transitioning to FINAL...");
                 gameStateSpace.put("FINAL");
                 System.out.println("FINAL STATE");
                 Thread.sleep(200);
-                countOfRounds = 200;
+                countOfRounds = 200; // TODO: Why is this here?
 
+                // TODO: why are we checking this? Shouldn't the game just end until you start the game again?
                 if (playerSpace.size() < 2) {
                     System.out.println("Not enough players to continue. Exiting...");
                     break;
