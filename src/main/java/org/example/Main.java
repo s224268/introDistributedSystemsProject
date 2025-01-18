@@ -30,18 +30,13 @@ public class Main {
 
         int waitTime = 30;
         int countOfRounds = 0;
+            playerSpace.put("Player", UUID.randomUUID().toString(), 0);
 
-        /* Maybe like this? I guess it doesnt work when one joins, then quits, then another joins
+            System.out.println("waiting player 1");
         Object[] firstplayer = playerSpace.get(new FormalField(String.class), new FormalField(String.class), new FormalField(Integer.class));
+            System.out.println("waiting player 2");
         playerSpace.query(new FormalField(String.class), new FormalField(String.class), new FormalField(Integer.class));
         playerSpace.put(firstplayer);
-        */
-        while (playerSpace.size() < 2) { //TODO: Make this not busy wait. Get() the first player,
-            // then query() until the second player, then re-add the first player
-            Thread.sleep(5000);
-            playerSpace.put("Player", UUID.randomUUID().toString(), 0);
-            System.out.println("Waiting for players to join...");
-        }
 
         while (true) {
 
@@ -56,7 +51,6 @@ public class Main {
 
             updateAllScores(answersWrapper, startTimestamp, correctAnswer, playerSpace, waitTime);
             System.out.println("After score update");
-            Thread.sleep(5000);
 
             gameStateSpace.getAll(new FormalField(String.class));
             gameStateSpace.put("SHOWING");
