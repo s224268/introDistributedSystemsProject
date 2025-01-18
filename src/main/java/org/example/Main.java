@@ -13,6 +13,9 @@ import java.util.*;
 
 public class Main {
 
+    private static Map<String, Integer> stalePlayers = new HashMap<String, Integer>();
+
+
     public static void main(String[] argv) throws InterruptedException, IOException {
         Repository r = new Repository();
         Space playerSpace = r.getPlayerSpace();
@@ -106,6 +109,7 @@ public class Main {
                 System.out.println("Player " + entry.getKey() + " has been removed for being inactive for 2 rounds.");
                 try {
                     playerSpace.get(new FormalField(String.class), new ActualField(entry.getKey()), new FormalField(Integer.class));
+                    System.out.printf("Player has been removed");
                 } catch (InterruptedException e) {
                     throw new RuntimeException("Error removing stale player: " + e.getMessage());
                 }
