@@ -37,6 +37,7 @@ public class AnswerGetter {
         if (answersWithTimestamps == null) {
             throw new NullPointerException("Idk how this happened");
         }
+        latch = new CountDownLatch(1);
         return answersWithTimestamps;
     }
 }
@@ -75,6 +76,8 @@ class AnswerCounter extends Thread {
         this.space = space;
         answers = new LinkedList<UserAnswerWithTimestamp>();
     }
+
+
 
     List<UserAnswerWithTimestamp> getAnswers() {
         if (!done) {
