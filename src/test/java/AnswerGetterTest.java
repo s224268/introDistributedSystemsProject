@@ -29,7 +29,7 @@ public class AnswerGetterTest {
         answerSpace.put("answer5", "answer6", 400L);
         answerSpace.put("answer7", "answer8", 500L);
         answerSpace.put("answer7", "answer8", 500L);
-        List<UserAnswerWithTimestamp> answersWithTimestamps = answerGetter.getAnswers(5,3);
+        List<UserAnswerWithTimestamp> answersWithTimestamps = answerGetter.getAnswers(5,8);
         System.out.println(answersWithTimestamps);
         /*
 
