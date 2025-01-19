@@ -204,9 +204,9 @@ class ScoreboardThread implements Runnable {
                         if (answer != null && Objects.equals((String) answer[0], correct_answer)) {
                             Object[] prevScore = scoreBoardSpace.getp(new FormalField(Integer.class), new ActualField((String) player[1]));
                             if (prevScore != null) {
-                                scoreBoardSpace.put((Integer) prevScore[0] + calculateScore((Integer) answer[2], 30), (String) player[1]);
+                                scoreBoardSpace.put((Integer) prevScore[0] + calculateScore(((Long) answer[2]).intValue(), 30), (String) player[1]);
                             } else {
-                                scoreBoardSpace.put(calculateScore((Integer) answer[2], 30), (String) player[1]);
+                                scoreBoardSpace.put(calculateScore(((Long) answer[2]).intValue(), 30), (String) player[1]);
                             }
                         }
                     }
