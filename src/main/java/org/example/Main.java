@@ -39,6 +39,7 @@ public class Main {
         new Thread(new QuestionThread(questionSpace, gameStateSpace)).start();
         new Thread(new AnswerThread(answerSpace, playerConnectionSpace, gameStateSpace)).start();
         new Thread(new ScoreboardThread(scoreboardSpace, playerConnectionSpace, questionSpace, gameStateSpace, answerSpace, 10)).start();
+        System.out.println("Repositories created and worker threads started, awaiting players");
     }
 }
 
@@ -92,14 +93,13 @@ class QuestionThread implements Runnable {
             while (true) {
                 // TODO: I made a mistake. We are showing scoreboard each round... If you don't think too hard about it, it kinda makes sense
                 // TODO: If you fix this, implement a way to show the correct question on client.. Is easy.
+
                 gameStateSpace.query(new ActualField("QUESTIONS"));
                 getNewQnA(questionSpace);
                 gameStateSpace.getAll(new FormalField(String.class));
                 gameStateSpace.put("ANSWERING");
 
             }
-
-
         } catch (Exception e) {
             e.printStackTrace();
         }
