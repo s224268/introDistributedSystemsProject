@@ -38,7 +38,7 @@ public class Main {
         new Thread(new PlayerConnectionThread(playerConnectionSpace, gameStateSpace)).start();
         new Thread(new QuestionThread(questionSpace, gameStateSpace)).start();
         new Thread(new AnswerThread(answerSpace, playerConnectionSpace, gameStateSpace)).start();
-        new Thread(new ScoreboardThread(scoreboardSpace, playerConnectionSpace, questionSpace, gameStateSpace, answerSpace)).start();
+        new Thread(new ScoreboardThread(scoreboardSpace, playerConnectionSpace, questionSpace, gameStateSpace, answerSpace, 10)).start();
     }
 }
 
@@ -67,7 +67,6 @@ class PlayerConnectionThread implements Runnable {
                     gameStateSpace.getAll(new FormalField(String.class));
                     gameStateSpace.put("STOP");
                 }
-
                 sleep(1000); // Simulate delay
             }
         } catch (Exception e) {
@@ -88,20 +87,12 @@ class QuestionThread implements Runnable {
 
     @Override
     public void run() {
-        int questionId = 0;
-        int countOfRounds = 0;
 
         try {
             while (true) {
                 // TODO: I made a mistake. We are showing scoreboard each round... If you don't think too hard about it, it kinda makes sense
                 // TODO: If you fix this, implement a way to show the correct question on client.. Is easy.
-                //if (countOfRounds == 10) {
-                //    gameStateSpace.getAll(new FormalField(String.class));
-                //    gameStateSpace.put("SCOREBOARD");
-                //    countOfRounds = 0;
-                //}
                 gameStateSpace.query(new ActualField("QUESTIONS"));
-                countOfRounds++;
                 getNewQnA(questionSpace);
                 gameStateSpace.getAll(new FormalField(String.class));
                 gameStateSpace.put("ANSWERING");
@@ -142,23 +133,34 @@ class AnswerThread implements Runnable {
     private final SequentialSpace answerSpace;
     private final SequentialSpace playerConnectionSpace;
     private final SequentialSpace gameStateSpace;
+    private final AnswerGetter answerGetter;
 
     public AnswerThread(SequentialSpace answerSpace, SequentialSpace playerConnectionSpace, SequentialSpace gameStateSpace) {
         this.answerSpace = answerSpace;
         this.playerConnectionSpace = playerConnectionSpace;
         this.gameStateSpace = gameStateSpace;
+        this.answerGetter = new AnswerGetter(answerSpace, playerConnectionSpace, 30);
     }
 
     @Override
     public void run() {
-        int timer = 0;
+
         try {
             while (true) {
-                // TODO: Fill in string fields player when u know
+
                 gameStateSpace.query(new ActualField("ANSWERING"));
                 //TODO: AnswerGetter, THEN
+                List<UserAnswerWithTimestamp> answersWithTimestamps = answerGetter.getAnswers();
+                for (UserAnswerWithTimestamp answerWithTimestamp : answersWithTimestamps) {
+                    answerSpace.put(answerWithTimestamp.answer, answerWithTimestamp.ID, answerWithTimestamp.timeStamp);
+                }
 
-                //TODO: Update AnswerSpace with timestamps
+                gameStateSpace.get(new ActualField("ANSWERING"));
+
+                gameStateSpace.put("SHOWING"); //Creating a new thread for this seems overkill
+                Thread.sleep(3000L);
+                gameStateSpace.get(new ActualField("SHOWING"));
+
                 gameStateSpace.put("SCOREBOARD");
                 }
         } catch (Exception e) {
@@ -174,20 +176,24 @@ class ScoreboardThread implements Runnable {
     private final SequentialSpace gameStateSpace;
     private final SequentialSpace questionSpace;
     private final SequentialSpace answerSpace;
+    private final int maxRounds;
 
-    public ScoreboardThread(SequentialSpace scoreBoardSpace, SequentialSpace playerConnectionSpace, RandomSpace questionSpace, SequentialSpace gameStateSpace, SequentialSpace answerSpace) {
+    public ScoreboardThread(SequentialSpace scoreBoardSpace, SequentialSpace playerConnectionSpace, RandomSpace questionSpace, SequentialSpace gameStateSpace, SequentialSpace answerSpace, int maxRounds) {
         this.scoreBoardSpace = scoreBoardSpace;
         this.playerConnectionSpace = playerConnectionSpace;
         this.questionSpace = questionSpace;
         this.gameStateSpace = gameStateSpace;
         this.answerSpace = answerSpace;
+        this.maxRounds = maxRounds;
     }
 
     @Override
     public void run() {
-        Integer timer = 0;
+
         try {
+            int round = 0;
             while (true) {
+                round++;
                 gameStateSpace.query(new ActualField("SCOREBOARD"));
                 String correct_answer = (String) questionSpace.query(new FormalField(String.class), new ActualField(1))[0];
 
@@ -202,6 +208,10 @@ class ScoreboardThread implements Runnable {
                 Thread.sleep(5000);
                 gameStateSpace.getAll(new FormalField(String.class));
                 gameStateSpace.put("QUESTIONS");
+                if(round == maxRounds) {
+                    round = 0;
+                    scoreBoardSpace.getAll(new FormalField(Integer.class), new FormalField(String.class));
+                }
             }
         } catch (Exception e) {
             e.printStackTrace();
