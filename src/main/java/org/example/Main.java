@@ -13,11 +13,14 @@ import static java.lang.Thread.sleep;
 public class Main {
     public static void main(String[] args) throws Exception {
         SpaceRepository repository = new SpaceRepository();
+
         // ['NAME', 'UUID']
         SequentialSpace playerConnectionSpace = new SequentialSpace();
         // ['TEXT', int] - int denotes the type. 0 for wrong, 1 for right, 2 for meaning
         RandomSpace questionSpace = new RandomSpace();
-        // ['TEXT', 'UUID', int] - int is the time it takes to give an answer - supplied by client
+
+        // ['TEXT', 'UUID'] - Answer from client
+        // ['TEXT', 'UUID', Long] - Answer with timestampo added - Long is the time it takes to give an answer
         SequentialSpace answerSpace = new SequentialSpace();
         // [int, 'UUID']
         SequentialSpace scoreboardSpace = new SequentialSpace();
@@ -149,10 +152,11 @@ class AnswerThread implements Runnable {
             while (true) {
 
                 gameStateSpace.query(new ActualField("ANSWERING"));
-                //TODO: AnswerGetter, THEN
+                Long currentTime = System.currentTimeMillis();
                 List<UserAnswerWithTimestamp> answersWithTimestamps = answerGetter.getAnswers();
                 for (UserAnswerWithTimestamp answerWithTimestamp : answersWithTimestamps) {
-                    answerSpace.put(answerWithTimestamp.answer, answerWithTimestamp.ID, answerWithTimestamp.timeStamp);
+                    System.out.println("To answerSpace, adding: " + answerWithTimestamp.answer + " " + answerWithTimestamp.ID + " " + answerWithTimestamp.timeStamp);
+                    answerSpace.put(answerWithTimestamp.answer, answerWithTimestamp.ID, (answerWithTimestamp.timeStamp - currentTime));
                 }
 
                 gameStateSpace.get(new ActualField("ANSWERING"));
@@ -196,24 +200,29 @@ class ScoreboardThread implements Runnable {
                 round++;
                 gameStateSpace.query(new ActualField("SCOREBOARD"));
                 String correct_answer = (String) questionSpace.query(new FormalField(String.class), new ActualField(1))[0];
-                System.out.println("happening");
-                if (answerSpace.size() != 0)
-                {
-                    for (Object[] player : playerConnectionSpace.queryAll(new FormalField(String.class), new FormalField(String.class))) {
-                        Object[] answer = answerSpace.getp(new FormalField(String.class), new ActualField((String) player[1]), new FormalField(Long.class));
-                        if (answer != null && Objects.equals((String) answer[0], correct_answer)) {
-                            Object[] prevScore = scoreBoardSpace.getp(new FormalField(Integer.class), new ActualField((String) player[1]));
-                            if (prevScore != null) {
-                                scoreBoardSpace.put((Integer) prevScore[0] + calculateScore(((Long) answer[2]).intValue(), 30), (String) player[1]);
-                            } else {
-                                scoreBoardSpace.put(calculateScore(((Long) answer[2]).intValue(), 30), (String) player[1]);
-                            }
-                        }
-                    }
 
+                List<Object[]> allAnswers = answerSpace.getAll(new FormalField(String.class), new FormalField(String.class), new FormalField(Long.class));
+
+                for (Object[] _answer : allAnswers) {
+                    String answerWord = (String) _answer[0];
+                    String ID = (String) _answer[1];
+                    Long timeTaken = (Long) _answer[2];
+                    if (answerWord.equals(correct_answer)) {
+                        System.out.print("Correct answer: " + correct_answer + " from: " + ID);
+                        Object[] prevScore = scoreBoardSpace.getp(new FormalField(Integer.class), new ActualField(ID));
+                        Integer scoreToAdd = calculateScore(timeTaken, 30); //TODO: Dont hardcode the wait time.
+                        System.out.print(", and therefore, their score is increased by " + scoreToAdd);
+                        if (prevScore != null){
+                            scoreToAdd += (Integer) prevScore[0];
+                        }
+                        scoreBoardSpace.put(scoreToAdd, ID);
+                        System.out.println(", now totalling " + scoreToAdd);
+                    } else {
+                        System.out.println("Incorrect answer: " + correct_answer + " from: " + ID);
+                    }
                 }
 
-                System.out.println("Not happening");
+
                 Thread.sleep(5000);
                 gameStateSpace.getAll(new FormalField(String.class));
                 gameStateSpace.put("QUESTIONS");
@@ -227,7 +236,13 @@ class ScoreboardThread implements Runnable {
         }
     }
 
-    private static Integer calculateScore(Integer responseTime, Integer waitTime) {
-        return (Integer) Math.max(0, (100 - (responseTime / waitTime)) * 100);
+    private static Integer calculateScore(Long responseTime, Integer waitTime) {
+
+        Long waitTimeInMillis = waitTime * 1000L;
+        // Perform the calculation using floating-point division
+        double score = Math.max(0, 100 - ((double) responseTime / waitTimeInMillis) * 100);
+        // Cast to Integer and return
+        return (int) score;
     }
+
 }

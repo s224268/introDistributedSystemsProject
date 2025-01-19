@@ -28,6 +28,8 @@ public class AnswerGetter {
         InternalTimer internalTimer = new InternalTimer(waitTime, latch);
         AnswerCounter answerCounter = new AnswerCounter(playerConnectionSpace, latch, answerSpace);
 
+
+
         internalTimer.start();
         answerCounter.start();
 
