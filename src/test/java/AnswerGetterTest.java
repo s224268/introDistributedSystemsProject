@@ -17,6 +17,8 @@ import static java.lang.Thread.sleep;
 public class AnswerGetterTest {
 
     public static void main(String[] args) throws InterruptedException, IOException {
+        /*
+
         Repository r = new Repository();
         Space playerSpace = r.getPlayerSpace();
         Space questionSpace = r.getQuestionSpace();
@@ -31,8 +33,6 @@ public class AnswerGetterTest {
         answerSpace.put("answer7", "answer8", 500L);
         List<UserAnswerWithTimestamp> answersWithTimestamps = answerGetter.getAnswers(5,8);
         System.out.println(answersWithTimestamps);
-        /*
-
 
          */
 

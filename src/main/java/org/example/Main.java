@@ -196,15 +196,24 @@ class ScoreboardThread implements Runnable {
                 round++;
                 gameStateSpace.query(new ActualField("SCOREBOARD"));
                 String correct_answer = (String) questionSpace.query(new FormalField(String.class), new ActualField(1))[0];
-
-                for (Object[] player : playerConnectionSpace.queryAll(new FormalField(String.class), new FormalField(String.class))) {
-                    Object[] answer = answerSpace.get(new FormalField(String.class), new ActualField((String) player[1]), new FormalField(Integer.class));
-                    if (Objects.equals((String) answer[0], correct_answer)) {
-                        Object[] prevScore = scoreBoardSpace.getp(new FormalField(Integer.class), new ActualField((String) player[1]));
-
-                        scoreBoardSpace.put((Integer) prevScore[0] + calculateScore((Integer) answer[2], 30), (String) player[1]);
+                System.out.println("happening");
+                if (answerSpace.size() != 0)
+                {
+                    for (Object[] player : playerConnectionSpace.queryAll(new FormalField(String.class), new FormalField(String.class))) {
+                        Object[] answer = answerSpace.getp(new FormalField(String.class), new ActualField((String) player[1]), new FormalField(Long.class));
+                        if (answer != null && Objects.equals((String) answer[0], correct_answer)) {
+                            Object[] prevScore = scoreBoardSpace.getp(new FormalField(Integer.class), new ActualField((String) player[1]));
+                            if (prevScore != null) {
+                                scoreBoardSpace.put((Integer) prevScore[0] + calculateScore((Integer) answer[2], 30), (String) player[1]);
+                            } else {
+                                scoreBoardSpace.put(calculateScore((Integer) answer[2], 30), (String) player[1]);
+                            }
+                        }
                     }
+
                 }
+
+                System.out.println("Not happening");
                 Thread.sleep(5000);
                 gameStateSpace.getAll(new FormalField(String.class));
                 gameStateSpace.put("QUESTIONS");
