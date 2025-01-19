@@ -8,6 +8,8 @@ import org.jspace.*;
 import java.io.IOException;
 import java.util.*;
 
+import static java.lang.Thread.sleep;
+
 public class Main {
     public static void main(String[] args) throws Exception {
         SpaceRepository repository = new SpaceRepository();
@@ -66,7 +68,7 @@ class PlayerConnectionThread implements Runnable {
                     gameStateSpace.put("STOP");
                 }
 
-                Thread.sleep(1000); // Simulate delay
+                sleep(1000); // Simulate delay
             }
         } catch (Exception e) {
             e.printStackTrace();
@@ -154,26 +156,11 @@ class AnswerThread implements Runnable {
             while (true) {
                 // TODO: Fill in string fields player when u know
                 gameStateSpace.query(new ActualField("ANSWERING"));
-                // System.out.println(timer);
-                boolean no_none_missing = true;
-                for (Object[] player : playerConnectionSpace.queryAll(new FormalField(String.class), new FormalField(String.class))) {
-                    var player_answered = answerSpace.queryp(new FormalField(String.class), new ActualField(player[1]), new FormalField(Integer.class));
+                //TODO: AnswerGetter, THEN
 
-
-                    if (player_answered == null) {
-                        no_none_missing = false;
-                    }
+                //TODO: Update AnswerSpace with timestamps
+                gameStateSpace.put("SCOREBOARD");
                 }
-
-
-                timer += 1;
-                if (no_none_missing || timer > 30) {
-                    gameStateSpace.getAll(new FormalField(String.class));
-                    gameStateSpace.put("SCOREBOARD");
-                    timer = 0;
-                }
-                Thread.sleep(1000);
-            }
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -211,17 +198,10 @@ class ScoreboardThread implements Runnable {
 
                         scoreBoardSpace.put((Integer) prevScore[0] + calculateScore((Integer) answer[2], 30), (String) player[1]);
                     }
-
                 }
-                while (timer < 5) {
-                    timer += 1;
-                    Thread.sleep(1000); // Update scoreboard periodically
-                }
+                Thread.sleep(5000);
                 gameStateSpace.getAll(new FormalField(String.class));
                 gameStateSpace.put("QUESTIONS");
-                timer = 0;
-
-
             }
         } catch (Exception e) {
             e.printStackTrace();
