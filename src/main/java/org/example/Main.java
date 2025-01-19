@@ -66,10 +66,13 @@ class PlayerConnectionThread implements Runnable {
                         && gameStateSpace.getp(new ActualField("STOP")) != null) {
                     gameStateSpace.getAll(new FormalField(String.class));
                     gameStateSpace.put("QUESTIONS");
+                    System.out.println("Setting game state to QUESTIONS");
+
                 }
                 else if (playerConnectionSpace.queryAll(new FormalField(String.class), new FormalField(String.class)).size() < 2) {
                     gameStateSpace.getAll(new FormalField(String.class));
                     gameStateSpace.put("STOP");
+                    System.out.println("Setting game state to STOP; Game is paused");
                 }
                 sleep(1000); // Simulate delay
             }
@@ -101,6 +104,7 @@ class QuestionThread implements Runnable {
                 getNewQnA(questionSpace);
                 gameStateSpace.getAll(new FormalField(String.class));
                 gameStateSpace.put("ANSWERING");
+                System.out.println("Setting game state to ANSWERING");
 
             }
         } catch (Exception e) {
@@ -162,11 +166,14 @@ class AnswerThread implements Runnable {
                 gameStateSpace.get(new ActualField("ANSWERING"));
 
                 gameStateSpace.put("SHOWING"); //Creating a new thread for this seems overkill
+                System.out.println("Setting game state to SHOWING");
+
                 Thread.sleep(3000L);
                 gameStateSpace.get(new ActualField("SHOWING"));
-
                 gameStateSpace.put("SCOREBOARD");
-                }
+                System.out.println("Setting game state to SCOREBOARD");
+
+            }
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -226,6 +233,8 @@ class ScoreboardThread implements Runnable {
                 Thread.sleep(5000);
                 gameStateSpace.getAll(new FormalField(String.class));
                 gameStateSpace.put("QUESTIONS");
+                System.out.println("Setting game state to QUESTIONS");
+
                 if(round == maxRounds) {
                     round = 0;
                     scoreBoardSpace.getAll(new FormalField(Integer.class), new FormalField(String.class));
