@@ -92,7 +92,7 @@ class QuestionThread implements Runnable {
         try {
             while (true) {
                 // TODO: I made a mistake. We are showing scoreboard each round... If you don't think too hard about it, it kinda makes sense
-                // If you fix this, implement a way to show the correct question on client.. Is easy.
+                // TODO: If you fix this, implement a way to show the correct question on client.. Is easy.
                 //if (countOfRounds == 10) {
                 //    gameStateSpace.getAll(new FormalField(String.class));
                 //    gameStateSpace.put("SCOREBOARD");
