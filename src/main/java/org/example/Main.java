@@ -16,13 +16,13 @@ public class Main {
 
         // ['NAME', 'UUID']
         SequentialSpace playerConnectionSpace = new SequentialSpace();
-        // ['TEXT', int] - int denotes the type. 0 for wrong, 1 for right, 2 for meaning
+        // ['TEXT', Integer] - int denotes the type. 0 for wrong, 1 for right, 2 for meaning
         RandomSpace questionSpace = new RandomSpace();
 
         // ['TEXT', 'UUID'] - Answer from client
         // ['TEXT', 'UUID', Long] - Answer with timestampo added - Long is the time it takes to give an answer
         SequentialSpace answerSpace = new SequentialSpace();
-        // [int, 'UUID']
+        // [Integer, 'UUID']
         SequentialSpace scoreboardSpace = new SequentialSpace();
         // ['STATE']
         SequentialSpace gameStateSpace = new SequentialSpace();
@@ -38,7 +38,7 @@ public class Main {
         repository.addGate("tcp://localhost:9001/?keep");
 
         // Start threads
-        new Thread(new PlayerConnectionThread(playerConnectionSpace, gameStateSpace)).start();
+        new Thread(new PlayerConnectionThread(playerConnectionSpace, gameStateSpace, scoreboardSpace)).start();
         new Thread(new QuestionThread(questionSpace, gameStateSpace)).start();
         new Thread(new AnswerThread(answerSpace, playerConnectionSpace, gameStateSpace)).start();
         new Thread(new ScoreboardThread(scoreboardSpace, playerConnectionSpace, questionSpace, gameStateSpace, answerSpace, 10)).start();
@@ -51,10 +51,12 @@ public class Main {
 class PlayerConnectionThread implements Runnable {
     private final SequentialSpace playerConnectionSpace;
     private final SequentialSpace gameStateSpace;
+    private final Space scoreboardSpace;
 
-    public PlayerConnectionThread(SequentialSpace playerConnectionSpace, SequentialSpace gameStateSpace) {
+    public PlayerConnectionThread(SequentialSpace playerConnectionSpace, SequentialSpace gameStateSpace, Space scoreboardSpace) {
         this.playerConnectionSpace = playerConnectionSpace;
         this.gameStateSpace = gameStateSpace;
+        this.scoreboardSpace = scoreboardSpace;
     }
 
     @Override
@@ -71,6 +73,7 @@ class PlayerConnectionThread implements Runnable {
                 } else if (playerConnectionSpace.size() < 2) {
                     gameStateSpace.getAll(new FormalField(String.class));
                     gameStateSpace.put("STOP");
+                    scoreboardSpace.getAll(new FormalField(Integer.class), new FormalField(String.class));
                     System.out.println("Setting game state to STOP; Game is paused");
                 }
                 sleep(1000); // Simulate delay
