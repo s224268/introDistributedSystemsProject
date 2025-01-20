@@ -113,25 +113,52 @@ class QuestionThread implements Runnable {
     }
 
     private static void getNewQnA(RandomSpace questionSpace) throws InterruptedException {
-
+        //TODO: Make this another class? Theres a lot of code that is not really related to QuestionThread
         var api = API.getInstance();
         Params params = new Params();
         params.setLimit("3");
-        List<WordDefinition> response = api.callUrbanDictionaryAPI(params);
+        List<WordDefinition> response; // = api.callUrbanDictionaryAPI(params);
+        String meaning = "";//response.get(0).getMeaning();
+        String trueDef = "";//response.get(0).getWord();
+        String word2 = "";//response.get(1).getWord();
+        String word3 = "";//response.get(2).getWord();
 
-        while (response.size() < 3) {
-            response = api.callUrbanDictionaryAPI(params);
+        boolean isApproved = false;
+        int tries = 0;
+        while(!isApproved) {
+            tries++;
+            do { //TODO: Er det her loop nødvendigt?
+                response = api.callUrbanDictionaryAPI(params);
+            } while (response.size() < 3);
+            questionSpace.getAll(new FormalField(String.class), new FormalField(Integer.class));
+            meaning = response.get(0).getMeaning();
+            trueDef = response.get(0).getWord();
+            word2 = response.get(1).getWord();
+            word3 = response.get(2).getWord();
+
+            isApproved = true; //TODO: Clean this loop
+            if ((meaning.length() > 1000 || trueDef.length() > 200 || word2.length() > 200 || word3.length() > 200) && tries < 15) { //TODO: Check the length of these
+                System.out.println("Word wasn't approved, retrying.");
+                isApproved = false;
+            }
         }
 
-        questionSpace.getAll(new FormalField(String.class), new FormalField(Integer.class));
-        String meaning = response.get(0).getMeaning();
-        String word1 = response.get(0).getWord();
-        String word2 = response.get(1).getWord();
-        String word3 = response.get(2).getWord();
-        questionSpace.put(word1, 1);
+        meaning = cleanMeaning(meaning, trueDef);
+
+        questionSpace.put(trueDef, 1);
         questionSpace.put(word2, 0);
         questionSpace.put(word3, 0);
         questionSpace.put(meaning, 2);
+    }
+
+    private static String cleanMeaning(String stringToClean, String toCleanFor){
+
+        List<String> stringsToCleanFor = Arrays.asList(stringToClean.split(" "));
+        String cleanString = stringToClean;
+        for (int i = 0; i < stringsToCleanFor.size(); i++) {
+            cleanString = cleanString.replace(toCleanFor, "________"); //TODO: Er det her det rigtige?
+        }
+        return cleanString;
     }
 }
 
@@ -230,7 +257,7 @@ class ScoreboardThread implements Runnable {
                 }
 
 
-                Thread.sleep(5000);
+                Thread.sleep(3000);
                 gameStateSpace.getAll(new FormalField(String.class));
                 gameStateSpace.put("QUESTIONS");
                 System.out.println("Setting game state to QUESTIONS");
