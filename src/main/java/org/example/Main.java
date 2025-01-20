@@ -5,8 +5,8 @@ import org.example.Services.Params;
 import org.example.Services.WordDefinition;
 import org.jspace.*;
 
-import java.io.IOException;
-import java.util.*;
+import java.util.Arrays;
+import java.util.List;
 
 import static java.lang.Thread.sleep;
 
@@ -62,14 +62,13 @@ class PlayerConnectionThread implements Runnable {
         try {
             // TODO: Implement heartbeat or something to auto remove inactive players
             while (true) {
-                if (playerConnectionSpace.queryAll(new FormalField(String.class), new FormalField(String.class)).size() > 1
+                if (playerConnectionSpace.size() > 1
                         && gameStateSpace.getp(new ActualField("STOP")) != null) {
                     gameStateSpace.getAll(new FormalField(String.class));
                     gameStateSpace.put("QUESTIONS");
                     System.out.println("Setting game state to QUESTIONS");
 
-                }
-                else if (playerConnectionSpace.queryAll(new FormalField(String.class), new FormalField(String.class)).size() < 2) {
+                } else if (playerConnectionSpace.size() < 2) {
                     gameStateSpace.getAll(new FormalField(String.class));
                     gameStateSpace.put("STOP");
                     System.out.println("Setting game state to STOP; Game is paused");
@@ -123,25 +122,22 @@ class QuestionThread implements Runnable {
         String word2 = "";//response.get(1).getWord();
         String word3 = "";//response.get(2).getWord();
 
-        boolean isApproved = false;
         int tries = 0;
-        while(!isApproved) {
+        do {
             tries++;
-            do { //TODO: Er det her loop nødvendigt?
                 response = api.callUrbanDictionaryAPI(params);
-            } while (response.size() < 3);
             questionSpace.getAll(new FormalField(String.class), new FormalField(Integer.class));
             meaning = response.get(0).getMeaning();
             trueDef = response.get(0).getWord();
             word2 = response.get(1).getWord();
             word3 = response.get(2).getWord();
-
-            isApproved = true; //TODO: Clean this loop
-            if ((meaning.length() > 1000 || trueDef.length() > 200 || word2.length() > 200 || word3.length() > 200) && tries < 15) { //TODO: Check the length of these
-                System.out.println("Word wasn't approved, retrying.");
-                isApproved = false;
+            int i = 1;
+            while (meaning.length() > 1000) { //TODO: Check the length of these and this check maybe after checkig the length of the words, but would need more loops. So doesnt look nice.
+                System.out.println("Meaning wasn't approved, retrying.");
+                meaning = response.get(i).getMeaning();
+                i++;
             }
-        }
+        } while (response.size() < 3 || (trueDef.length() > 200 || word2.length() > 200 || word3.length() > 200) && tries < 15);
 
         meaning = cleanMeaning(meaning, trueDef);
 
