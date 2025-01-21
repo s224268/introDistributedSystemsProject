@@ -341,7 +341,7 @@ class ScoreboardThread implements Runnable {
                 gameStateSpace.put("QUESTIONS");
                 System.out.println("Setting game state to QUESTIONS");
 
-                if (round == maxRounds) {
+                if (round == maxRounds) { //TODO: Move me up? Father please
                     round = 0;
                     scoreBoardSpace.getAll(new FormalField(Integer.class), new FormalField(String.class));
                 }
