@@ -7,15 +7,15 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.util.List;
 import com.google.gson.Gson;
+import okhttp3.*;
 
 public class API {
 
     private static final String BASE_URL = "https://unofficialurbandictionaryapi.com/api/random?";
-    private static final HttpClient client = HttpClient.newHttpClient();
+    private static final OkHttpClient client = new OkHttpClient();
     private static final Gson gson = new Gson();
     private static API instance;
 
-    // Private constructor to prevent instantiation
     private API() {}
 
     // Public method to provide access to the instance
@@ -26,21 +26,47 @@ public class API {
         return instance;
     }
 
+    public void testInternetConnection() {
+
+        OkHttpClient client = new OkHttpClient();
+        Request request = new Request.Builder()
+                .url("https://www.google.com")
+                .build();
+
+        try (Response response = client.newCall(request).execute()) {
+            if (response.isSuccessful()) {
+                System.out.println("Internet is accessible: " + response.body().string());
+            } else {
+                System.err.println("Failed to access the internet: " + response.message());
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
     public List<WordDefinition> callUrbanDictionaryAPI(Params params) {
+
+        testInternetConnection();
+
         String url = BASE_URL + params.toQueryString();
-        HttpRequest request = HttpRequest.newBuilder()
-                .uri(URI.create(url))
-                .GET()
+
+        // Build the HTTP request
+        Request request = new Request.Builder()
+                .url(url)
+                .get()
                 .build();
 
         try {
-            HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
-            if (response.statusCode() == 200) {
-                return gson.fromJson(response.body(), ApiResponse.class).getData();
+            Response response = client.newCall(request).execute();
+
+            if (response.isSuccessful() && response.body() != null) {
+                String responseBody = response.body().string();
+                ApiResponse apiResponse = gson.fromJson(responseBody, ApiResponse.class);
+                return apiResponse.getData();
             } else {
-                System.err.println("Error: " + response.statusCode());
+                System.err.println("Error: " + (response.body() != null ? response.body().string() : "No response body"));
             }
-        } catch (IOException | InterruptedException e) {
+        } catch (IOException e) {
             System.out.println("Error when calling API");
             e.printStackTrace();
         }
