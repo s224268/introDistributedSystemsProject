@@ -7,6 +7,8 @@ import org.jspace.*;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import static java.lang.Thread.sleep;
 
@@ -152,12 +154,11 @@ class QuestionThread implements Runnable {
 
     private static String cleanMeaning(String stringToClean, String toCleanFor){
 
-        List<String> stringsToCleanFor = Arrays.asList(stringToClean.split(" "));
-        String cleanString = stringToClean;
-        for (int i = 0; i < stringsToCleanFor.size(); i++) {
-            cleanString = cleanString.replace(toCleanFor, "________"); //TODO: Er det her det rigtige?
-        }
-        return cleanString;
+        Pattern pattern = Pattern.compile(Pattern.quote(toCleanFor), Pattern.CASE_INSENSITIVE);
+        Matcher matcher = pattern.matcher(stringToClean);
+
+        // Replace all case-insensitive occurrences of `toCleanFor` with "________"
+        return matcher.replaceAll("________");
     }
 }
 
