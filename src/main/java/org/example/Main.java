@@ -190,45 +190,6 @@ class QuestionThread implements Runnable {
         } while (tries < 15);
     }
 
-
-    private static void getNewQnAOld(RandomSpace questionSpace) throws InterruptedException {
-        //TODO: Make this another class? Theres a lot of code that is not really related to QuestionThread
-        var api = API.getInstance();
-        Params params = new Params();
-        params.setLimit("3");
-        List<WordDefinition> response; // = api.callUrbanDictionaryAPI(params);
-        String meaning = "";//response.get(0).getMeaning();
-        String trueDef = "";//response.get(0).getWord();
-        String word2 = "";//response.get(1).getWord();
-        String word3 = "";//response.get(2).getWord();
-
-        int tries = 0;
-        do {
-            tries++;
-            response = api.callUrbanDictionaryAPI(params);
-            questionSpace.getAll(new FormalField(String.class), new FormalField(Integer.class));
-            meaning = response.get(0).getMeaning();
-            trueDef = response.get(0).getWord();
-            word2 = response.get(1).getWord();
-            word3 = response.get(2).getWord();
-            int i = 1;
-            while (meaning.length() > 600 && i < 4) {
-                System.out.println("Meaning wasn't approved, retrying.");
-                meaning = response.get(i).getMeaning();
-                i++;
-            }
-        } while (response.size() < 3 || (trueDef.length() > 200 || word2.length() > 200 || word3.length() > 200) && tries < 15);
-
-        meaning = cleanMeaning(meaning, trueDef);
-        System.out.println("Inputting truedef: " + trueDef);
-        System.out.println("Inputting meaning: " + meaning);
-
-        questionSpace.put(trueDef, 1);
-        questionSpace.put(word2, 0);
-        questionSpace.put(word3, 0);
-        questionSpace.put(meaning, 2);
-    }
-
     private static String cleanMeaning(String stringToClean, String toCleanFor) {
 
 
