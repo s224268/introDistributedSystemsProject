@@ -212,7 +212,7 @@ class QuestionThread implements Runnable {
             word2 = response.get(1).getWord();
             word3 = response.get(2).getWord();
             int i = 1;
-            while (meaning.length() > 700 && i < 4) {
+            while (meaning.length() > 600 && i < 4) {
                 System.out.println("Meaning wasn't approved, retrying.");
                 meaning = response.get(i).getMeaning();
                 i++;
