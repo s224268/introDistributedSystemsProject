@@ -104,6 +104,7 @@ class AnswerCounter extends Thread {
             throw new NullPointerException("Class was not instantiated correctly, or space passed was null");
         }
         while (answers.size() < playerSpace.size()) {
+            System.out.println("Answers size is:" + answers.size());
             try {
                 Object[] tuple = answerSpace.get(new FormalField(String.class), new FormalField(String.class)); //TODO: Check if this pattern works
                 String answerString = (String) tuple[0];
