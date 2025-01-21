@@ -5,7 +5,6 @@ import org.example.Services.Params;
 import org.example.Services.WordDefinition;
 import org.jspace.*;
 
-import java.util.Arrays;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -49,7 +48,6 @@ public class Main {
 }
 
 
-
 class PlayerConnectionThread implements Runnable {
     private final SequentialSpace playerConnectionSpace;
     private final SequentialSpace gameStateSpace;
@@ -64,7 +62,6 @@ class PlayerConnectionThread implements Runnable {
     @Override
     public void run() {
         try {
-            // TODO: Implement heartbeat or something to auto remove inactive players
             while (true) {
                 if (playerConnectionSpace.size() > 1
                         && gameStateSpace.getp(new ActualField("STOP")) != null) {
@@ -101,9 +98,6 @@ class QuestionThread implements Runnable {
 
         try {
             while (true) {
-                // TODO: I made a mistake. We are showing scoreboard each round... If you don't think too hard about it, it kinda makes sense
-                // TODO: If you fix this, implement a way to show the correct question on client.. Is easy.
-
                 gameStateSpace.query(new ActualField("QUESTIONS"));
                 getNewQnA(questionSpace);
                 gameStateSpace.getAll(new FormalField(String.class));
@@ -117,7 +111,6 @@ class QuestionThread implements Runnable {
     }
 
     private static void getNewQnA(RandomSpace questionSpace) throws InterruptedException {
-        //TODO: Make this another class? Theres a lot of code that is not really related to QuestionThread
         var api = API.getInstance();
         Params params = new Params();
         params.setLimit("3");
@@ -130,14 +123,14 @@ class QuestionThread implements Runnable {
         int tries = 0;
         do {
             tries++;
-                response = api.callUrbanDictionaryAPI(params);
+            response = api.callUrbanDictionaryAPI(params);
             questionSpace.getAll(new FormalField(String.class), new FormalField(Integer.class));
             meaning = response.get(0).getMeaning();
             trueDef = response.get(0).getWord();
             word2 = response.get(1).getWord();
             word3 = response.get(2).getWord();
             int i = 1;
-            while (meaning.length() > 700 && i < 4) { //TODO: This is a deadlock or out of bounds exception if all three are too long. Added the i< condition as a jank fix
+            while (meaning.length() > 700 && i < 4) {
                 System.out.println("Meaning wasn't approved, retrying.");
                 meaning = response.get(i).getMeaning();
                 i++;
@@ -152,7 +145,7 @@ class QuestionThread implements Runnable {
         questionSpace.put(meaning, 2);
     }
 
-    private static String cleanMeaning(String stringToClean, String toCleanFor){
+    private static String cleanMeaning(String stringToClean, String toCleanFor) {
 
         Pattern pattern = Pattern.compile(Pattern.quote(toCleanFor), Pattern.CASE_INSENSITIVE);
         Matcher matcher = pattern.matcher(stringToClean);
@@ -245,9 +238,9 @@ class ScoreboardThread implements Runnable {
                     if (answerWord.equals(correct_answer)) {
                         System.out.print("Correct answer: " + correct_answer + " from: " + ID);
                         Object[] prevScore = scoreBoardSpace.getp(new FormalField(Integer.class), new ActualField(ID));
-                        Integer scoreToAdd = calculateScore(timeTaken, 30); //TODO: Dont hardcode the wait time.
+                        Integer scoreToAdd = calculateScore(timeTaken, 30);
                         System.out.print(", and therefore, their score is increased by " + scoreToAdd);
-                        if (prevScore != null){
+                        if (prevScore != null) {
                             scoreToAdd += (Integer) prevScore[0];
                         }
                         scoreBoardSpace.put(scoreToAdd, ID);
@@ -263,7 +256,7 @@ class ScoreboardThread implements Runnable {
                 gameStateSpace.put("QUESTIONS");
                 System.out.println("Setting game state to QUESTIONS");
 
-                if(round == maxRounds) {
+                if (round == maxRounds) {
                     round = 0;
                     scoreBoardSpace.getAll(new FormalField(Integer.class), new FormalField(String.class));
                 }

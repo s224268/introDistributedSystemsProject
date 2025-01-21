@@ -7,13 +7,12 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
 
-import static java.lang.Thread.sleep;
 public class AnswerGetter {
-    private Space answerSpace;
-    private Space playerConnectionSpace;
+    private final Space answerSpace;
+    private final Space playerConnectionSpace;
     private CountDownLatch latch = new CountDownLatch(1);
     private List<UserAnswerWithTimestamp> answersWithTimestamps;
-    private int waitTime;
+    private final int waitTime;
 
     public AnswerGetter(Space answerSpace, Space playerSpace, int waitTime) {
         this.answersWithTimestamps = new LinkedList<>();
@@ -27,7 +26,6 @@ public class AnswerGetter {
 
         InternalTimer internalTimer = new InternalTimer(waitTime, latch);
         AnswerCounter answerCounter = new AnswerCounter(playerConnectionSpace, latch, answerSpace);
-
 
 
         internalTimer.start();
@@ -57,8 +55,8 @@ public class AnswerGetter {
 }
 
 class InternalTimer extends Thread {
-    private int wait;
-    private CountDownLatch latch;
+    private final int wait;
+    private final CountDownLatch latch;
 
     InternalTimer(int wait, CountDownLatch latch) {
         this.wait = wait;
@@ -106,7 +104,7 @@ class AnswerCounter extends Thread {
         while (answers.size() < playerSpace.size()) {
             System.out.println("Answers size is:" + answers.size());
             try {
-                Object[] tuple = answerSpace.get(new FormalField(String.class), new FormalField(String.class)); //TODO: Check if this pattern works
+                Object[] tuple = answerSpace.get(new FormalField(String.class), new FormalField(String.class));
                 String answerString = (String) tuple[0];
                 String ID = (String) tuple[1];
                 long timeStamp = System.currentTimeMillis();
