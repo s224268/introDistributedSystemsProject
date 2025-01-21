@@ -114,6 +114,88 @@ class QuestionThread implements Runnable {
         var api = API.getInstance();
         Params params = new Params();
         params.setLimit("3");
+
+        List<WordDefinition> response;
+        String meaning;
+        String trueDef;
+        String word2;
+        String word3;
+
+        int tries = 0;
+        do {
+            tries++;
+
+            // Call the API
+            response = api.callUrbanDictionaryAPI(params);
+
+            // Clear out any old items from the questionSpace
+            questionSpace.getAll(new FormalField(String.class), new FormalField(Integer.class));
+
+            // If the response has fewer than 3 items, keep trying
+            if (response.size() < 3) {
+                continue;
+            }
+
+            // We'll search within the whole list for the first valid meaning
+            int i = 0;
+            while (i < response.size() && response.get(i).getMeaning().length() > 700) {
+                i++;
+            }
+
+            // If we don't find any short enough meaning, retry
+            if (i >= response.size()) {
+                continue;
+            }
+
+            // Now we have a short enough meaning at index i
+            WordDefinition picked = response.get(i);
+            trueDef = picked.getWord();
+            meaning = picked.getMeaning();
+
+            // Remove the chosen "trueDef" from the list so we don't use it as a fake
+            response.remove(i);
+
+            // We still need at least 2 entries for fakes
+            if (response.size() < 2) {
+                continue;
+            }
+
+            // Just pick the first two from the updated list as fakes.
+            // If you prefer random, shuffle the list or pick random indices.
+            word2 = response.get(0).getWord();
+            word3 = response.get(1).getWord();
+
+            // Also check length constraints for the words themselves (<= 200)
+            if (trueDef.length() > 200 || word2.length() > 200 || word3.length() > 200) {
+                // meaning or words are too long, try again
+                continue;
+            }
+
+            // If everything is OK, break the loop
+            // (The do...while condition may also do it, but let's just break)
+            meaning = cleanMeaning(meaning, trueDef);
+
+            System.out.println("Inputting truedef: " + trueDef);
+            System.out.println("Inputting meaning: " + meaning);
+
+            // Put them all in the space
+            questionSpace.put(trueDef, 1);  // correct definition
+            questionSpace.put(word2, 0);    // fake
+            questionSpace.put(word3, 0);    // fake
+            questionSpace.put(meaning, 2);  // meaning
+
+            // Successfully populated, so break from the do-while
+            break;
+
+        } while (tries < 15);
+    }
+
+
+    private static void getNewQnAOld(RandomSpace questionSpace) throws InterruptedException {
+        //TODO: Make this another class? Theres a lot of code that is not really related to QuestionThread
+        var api = API.getInstance();
+        Params params = new Params();
+        params.setLimit("3");
         List<WordDefinition> response; // = api.callUrbanDictionaryAPI(params);
         String meaning = "";//response.get(0).getMeaning();
         String trueDef = "";//response.get(0).getWord();
@@ -138,6 +220,8 @@ class QuestionThread implements Runnable {
         } while (response.size() < 3 || (trueDef.length() > 200 || word2.length() > 200 || word3.length() > 200) && tries < 15);
 
         meaning = cleanMeaning(meaning, trueDef);
+        System.out.println("Inputting truedef: " + trueDef);
+        System.out.println("Inputting meaning: " + meaning);
 
         questionSpace.put(trueDef, 1);
         questionSpace.put(word2, 0);
@@ -146,6 +230,7 @@ class QuestionThread implements Runnable {
     }
 
     private static String cleanMeaning(String stringToClean, String toCleanFor) {
+
 
         Pattern pattern = Pattern.compile(Pattern.quote(toCleanFor), Pattern.CASE_INSENSITIVE);
         Matcher matcher = pattern.matcher(stringToClean);
