@@ -135,7 +135,7 @@ class QuestionThread implements Runnable {
             word2 = response.get(1).getWord();
             word3 = response.get(2).getWord();
             int i = 1;
-            while (meaning.length() > 1000) { //TODO: Check the length of these and this check maybe after checkig the length of the words, but would need more loops. So doesnt look nice.
+            while (meaning.length() > 700 && i < 4) { //TODO: This is a deadlock or out of bounds exception if all three are too long. Added the i< condition as a jank fix
                 System.out.println("Meaning wasn't approved, retrying.");
                 meaning = response.get(i).getMeaning();
                 i++;
@@ -189,7 +189,7 @@ class AnswerThread implements Runnable {
                     answerSpace.put(answerWithTimestamp.answer, answerWithTimestamp.ID, (answerWithTimestamp.timeStamp - currentTime));
                 }
 
-                gameStateSpace.get(new ActualField("ANSWERING"));
+                gameStateSpace.getAll(new ActualField("ANSWERING"));
 
                 gameStateSpace.put("SHOWING"); //Creating a new thread for this seems overkill
                 System.out.println("Setting game state to SHOWING");
@@ -231,6 +231,7 @@ class ScoreboardThread implements Runnable {
             int round = 0;
             while (true) {
                 round++;
+                System.out.println("Current round: " + round);
                 gameStateSpace.query(new ActualField("SCOREBOARD"));
                 String correct_answer = (String) questionSpace.query(new FormalField(String.class), new ActualField(1))[0];
 
