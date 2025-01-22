@@ -1,15 +1,21 @@
 package org.example;
 
+import static java.lang.Thread.sleep;
+
 import org.example.Services.API;
 import org.example.Services.Params;
 import org.example.Services.WordDefinition;
-import org.jspace.*;
+import org.jspace.ActualField;
+import org.jspace.FormalField;
+import org.jspace.RandomSpace;
+import org.jspace.SequentialSpace;
+import org.jspace.Space;
+import org.jspace.SpaceRepository;
 
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import static java.lang.Thread.sleep;
 
 public class Main {
     public static void main(String[] args) throws Exception {
@@ -36,7 +42,7 @@ public class Main {
         repository.add("gameStateSpace", gameStateSpace);
 
         // Open a gate for remote connections
-        repository.addGate("tcp://localhost:9001/?keep");
+        repository.addGate("tcp://0.0.0.0:9001/?keep");
 
         // Start threads
         new Thread(new PlayerConnectionThread(playerConnectionSpace, gameStateSpace, scoreboardSpace)).start();
@@ -46,7 +52,6 @@ public class Main {
         System.out.println("Repositories created and worker threads started, awaiting players");
     }
 }
-
 
 class PlayerConnectionThread implements Runnable {
     private final SequentialSpace playerConnectionSpace;
@@ -62,6 +67,16 @@ class PlayerConnectionThread implements Runnable {
     @Override
     public void run() {
         try {
+            while (playerConnectionSpace.size() < 2) {
+                sleep(200);
+            }
+            gameStateSpace.put("QUESTIONS");
+
+            /*
+            if (playerConnectionSpace.size()>1) {
+                gameStateSpace.getAll(new FormalField(String.class));
+                gameStateSpace.put("SHOWING");
+            }
             while (true) {
                 if (playerConnectionSpace.size() > 1
                         && gameStateSpace.getp(new ActualField("STOP")) != null) {
@@ -76,7 +91,7 @@ class PlayerConnectionThread implements Runnable {
                     System.out.println("Setting game state to STOP; Game is paused");
                 }
                 sleep(1000); // Simulate delay
-            }
+            }*/
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -91,6 +106,50 @@ class QuestionThread implements Runnable {
     public QuestionThread(RandomSpace questionSpace, SequentialSpace gameStateSpace) {
         this.questionSpace = questionSpace;
         this.gameStateSpace = gameStateSpace;
+    }
+
+    private static void getNewQnA(RandomSpace questionSpace) throws InterruptedException {
+        var api = API.getInstance();
+        Params params = new Params();
+        params.setLimit("3");
+        List<WordDefinition> response; // = api.callUrbanDictionaryAPI(params);
+        String meaning = "";//response.get(0).getMeaning();
+        String trueDef = "";//response.get(0).getWord();
+        String word2 = "";//response.get(1).getWord();
+        String word3 = "";//response.get(2).getWord();
+
+        int tries = 0;
+        do {
+            tries++;
+            response = api.callUrbanDictionaryAPI(params);
+            questionSpace.getAll(new FormalField(String.class), new FormalField(Integer.class));
+            meaning = response.get(0).getMeaning();
+            trueDef = response.get(0).getWord();
+            word2 = response.get(1).getWord();
+            word3 = response.get(2).getWord();
+            int i = 1;
+            while (meaning.length() > 700 && i < 4) {
+                System.out.println("Meaning wasn't approved, retrying.");
+                meaning = response.get(i).getMeaning();
+                i++;
+            }
+        } while (response.size() < 3 || (trueDef.length() > 200 || word2.length() > 200 || word3.length() > 200) && tries < 15);
+
+        meaning = cleanMeaning(meaning, trueDef);
+
+        questionSpace.put(trueDef, 1);
+        questionSpace.put(word2, 0);
+        questionSpace.put(word3, 0);
+        questionSpace.put(meaning, 2);
+    }
+
+    private static String cleanMeaning(String stringToClean, String toCleanFor) {
+
+        Pattern pattern = Pattern.compile(Pattern.quote(toCleanFor), Pattern.CASE_INSENSITIVE);
+        Matcher matcher = pattern.matcher(stringToClean);
+
+        // Replace all case-insensitive occurrences of `toCleanFor` with "________"
+        return matcher.replaceAll("________");
     }
 
     @Override
@@ -108,96 +167,6 @@ class QuestionThread implements Runnable {
         } catch (Exception e) {
             e.printStackTrace();
         }
-    }
-
-    private static void getNewQnA(RandomSpace questionSpace) throws InterruptedException {
-        var api = API.getInstance();
-        Params params = new Params();
-        params.setLimit("3");
-
-        List<WordDefinition> response;
-        String meaning;
-        String trueDef;
-        String word2;
-        String word3;
-
-        int tries = 0;
-        do {
-            tries++;
-
-            // Call the API
-            response = api.callUrbanDictionaryAPI(params);
-
-            // Clear out any old items from the questionSpace
-            questionSpace.getAll(new FormalField(String.class), new FormalField(Integer.class));
-
-            // If the response has fewer than 3 items, keep trying
-            if (response.size() < 3) {
-                continue;
-            }
-
-            // We'll search within the whole list for the first valid meaning
-            int i = 0;
-            while (i < response.size() && response.get(i).getMeaning().length() > 700) {
-                i++;
-            }
-
-            // If we don't find any short enough meaning, retry
-            if (i >= response.size()) {
-                continue;
-            }
-
-            // Now we have a short enough meaning at index i
-            WordDefinition picked = response.get(i);
-            trueDef = picked.getWord();
-            meaning = picked.getMeaning();
-
-            // Remove the chosen "trueDef" from the list so we don't use it as a fake
-            response.remove(i);
-
-            // We still need at least 2 entries for fakes
-            if (response.size() < 2) {
-                continue;
-            }
-
-            // Just pick the first two from the updated list as fakes.
-            // If you prefer random, shuffle the list or pick random indices.
-            word2 = response.get(0).getWord();
-            word3 = response.get(1).getWord();
-
-            // Also check length constraints for the words themselves (<= 200)
-            if (trueDef.length() > 200 || word2.length() > 200 || word3.length() > 200) {
-                // meaning or words are too long, try again
-                continue;
-            }
-
-            // If everything is OK, break the loop
-            // (The do...while condition may also do it, but let's just break)
-            meaning = cleanMeaning(meaning, trueDef);
-
-            System.out.println("Inputting truedef: " + trueDef);
-            System.out.println("Inputting meaning: " + meaning);
-
-            // Put them all in the space
-            questionSpace.put(trueDef, 1);  // correct definition
-            questionSpace.put(word2, 0);    // fake
-            questionSpace.put(word3, 0);    // fake
-            questionSpace.put(meaning, 2);  // meaning
-
-            // Successfully populated, so break from the do-while
-            break;
-
-        } while (tries < 15);
-    }
-
-    private static String cleanMeaning(String stringToClean, String toCleanFor) {
-
-
-        Pattern pattern = Pattern.compile(Pattern.quote(toCleanFor), Pattern.CASE_INSENSITIVE);
-        Matcher matcher = pattern.matcher(stringToClean);
-
-        // Replace all case-insensitive occurrences of `toCleanFor` with "________"
-        return matcher.replaceAll("________");
     }
 }
 
@@ -264,6 +233,15 @@ class ScoreboardThread implements Runnable {
         this.maxRounds = maxRounds;
     }
 
+    private static Integer calculateScore(Long responseTime, Integer waitTime) {
+
+        Long waitTimeInMillis = waitTime * 1000L;
+        // Perform the calculation using floating-point division
+        double score = Math.max(0, 100 - ((double) responseTime / waitTimeInMillis) * 100);
+        // Cast to Integer and return
+        return (int) score;
+    }
+
     @Override
     public void run() {
 
@@ -298,11 +276,15 @@ class ScoreboardThread implements Runnable {
 
 
                 Thread.sleep(3000);
+                while (playerConnectionSpace.size() < 2) {
+                    Thread.sleep(300);
+                    scoreBoardSpace.getAll(new FormalField(Integer.class), new FormalField(String.class));
+                }
                 gameStateSpace.getAll(new FormalField(String.class));
                 gameStateSpace.put("QUESTIONS");
                 System.out.println("Setting game state to QUESTIONS");
 
-                if (round == maxRounds) { //TODO: Move me up? Father please
+                if (round == maxRounds) {
                     round = 0;
                     scoreBoardSpace.getAll(new FormalField(Integer.class), new FormalField(String.class));
                 }
@@ -310,15 +292,6 @@ class ScoreboardThread implements Runnable {
         } catch (Exception e) {
             e.printStackTrace();
         }
-    }
-
-    private static Integer calculateScore(Long responseTime, Integer waitTime) {
-
-        Long waitTimeInMillis = waitTime * 1000L;
-        // Perform the calculation using floating-point division
-        double score = Math.max(0, 100 - ((double) responseTime / waitTimeInMillis) * 100);
-        // Cast to Integer and return
-        return (int) score;
     }
 
 }
